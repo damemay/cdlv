@@ -33,6 +33,7 @@ The goal is to create as lowest resource usage engine as possible. This is why t
 - All indexes start from 0.
 - Default scene image starts from the 0 index, so there's no need to set it at the start of script.
 - Paths can be either full or relative from the executable file.
+- Images width/height that is smaller than window width/height will be scaled to match window.
 
 </details>
 
