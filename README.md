@@ -102,3 +102,4 @@ int main() {
 - [ ] app for playtesting .adv files, similiar to renpy.
 - [ ] transition effects between images (dissolve, fade in/out, etc.).
 - [ ] typewriter effect.
+- [ ] make a consistent gui
