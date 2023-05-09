@@ -36,3 +36,4 @@ dkms.conf
 build/
 *.adv
 compile_commands.json
+.cache/
