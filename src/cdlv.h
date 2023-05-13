@@ -19,6 +19,11 @@ typedef enum {
     cdlv_none,
 } cdlv_type;
 
+typedef enum {
+    cdlv_main_menu,
+    cdlv_main_run,
+} cdlv_state;
+
 typedef struct cdlv_scene {
     SDL_Surface** images;
     char** image_paths;
@@ -47,6 +52,15 @@ typedef struct cdlv_text {
     uint32_t wrap;
 } cdlv_text;
 
+typedef struct cdlv_menu {
+    char* path;
+    char** files;
+    char* text;
+    size_t file_count;
+    size_t current_choice;
+    bool path_exists;
+} cdlv_menu;
+
 typedef struct cdlv_base {
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -55,6 +69,9 @@ typedef struct cdlv_base {
     bool run;
     uint64_t c_tick, l_tick;
     float e_ticks;
+    cdlv_state state;
+    size_t w, h;
+    const char* title;
 
     cdlv_canvas* canvas;
     cdlv_text* text;
@@ -66,14 +83,26 @@ typedef struct cdlv_base {
 } cdlv_base;
 
 cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h);
-void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps);
-void cdlv_text_create(cdlv_base* base, const char* path, const size_t size, const uint32_t wrap, const size_t x, const size_t y, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a);
-void cdlv_clean(cdlv_base* base);
+
+void cdlv_clean_all(cdlv_base* base);
 void cdlv_loop_start(cdlv_base* base);
 void cdlv_render(cdlv_base* base);
 void cdlv_loop_end(cdlv_base* base);
+void cdlv_handle_keys(cdlv_base* base, SDL_Event* e);
+
+void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps);
+
 void cdlv_read_file(cdlv_base* base, const char* file);
 void cdlv_scene_info(cdlv_base* base, const size_t index);
 void cdlv_start(cdlv_base* base);
+
+void cdlv_text_create(cdlv_base* base, const char* path, const size_t size, const uint32_t wrap, const size_t x, const size_t y, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a);
+void cdlv_text_render(cdlv_base* base);
+void cdlv_text_update(cdlv_base* base, const char* content);
+
+cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path);
+void cdlv_menu_render(cdlv_base* base);
+void cdlv_menu_handle_keys(cdlv_base** base, cdlv_menu** menu, SDL_Event* e);
+void cdlv_menu_clean(cdlv_menu* menu);
 
 #endif

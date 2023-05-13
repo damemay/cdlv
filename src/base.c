@@ -1,5 +1,4 @@
 #include "cdlv.h"
-#include <SDL_render.h>
 
 static inline void sdl_init(const char* title,
         const size_t w, const size_t h,
@@ -56,6 +55,9 @@ cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h) {
     base->c_tick        = SDL_GetTicks64();
     base->l_tick        = SDL_GetTicks64();
     base->e_ticks       = 0.0f;
+    base->title         = title;
+    base->w             = w;
+    base->h             = h;
 
     base->canvas        = NULL;
     base->text          = NULL;
@@ -66,6 +68,7 @@ cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h) {
     base->c_image       = 0;
     base->accum         = 0.0f;
     base->can_interact  = true;
+    base->state         = cdlv_main_menu;
 
     sdl_init(title, w, h, &base->window, &base->renderer, base->gamepads);
     SDL_SetRenderDrawColor(base->renderer, 0, 0, 0, 255);
@@ -73,7 +76,7 @@ cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h) {
     return base;
 };
 
-void cdlv_clean(cdlv_base* base) {
+void cdlv_clean_all(cdlv_base* base) {
     if(base->scenes) {
         for(size_t i=0; i<base->scene_count; ++i)
             if(base->scenes[i]) free(base->scenes[i]);
@@ -89,6 +92,7 @@ void cdlv_clean(cdlv_base* base) {
         if(base->text->tex) SDL_DestroyTexture(base->text->tex);
         free(base->text);
     }
-    sdl_clean(&base->window, &base->renderer, base->gamepads);
+    if(base->window || base->renderer)
+        sdl_clean(&base->window, &base->renderer, base->gamepads);
     free(base);
 }

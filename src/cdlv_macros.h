@@ -14,7 +14,7 @@
 
 #define duplicate_string(dest, src, size)   \
 {                                           \
-    *dest = malloc(size);                   \
+    *dest = calloc(size, sizeof(char));     \
     if(!dest)                               \
         die("Could not "                    \
         "allocate destination for "         \

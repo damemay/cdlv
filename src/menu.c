@@ -1,0 +1,134 @@
+#include "cdlv.h"
+#include <dirent.h>
+
+static inline void menu_reprint(cdlv_menu* menu) {
+    if(menu->current_choice < menu->file_count) {
+        strcpy(menu->text, menu->path);
+        strcat(menu->text, "\n>");
+        for(size_t i=menu->current_choice; i<menu->file_count; ++i) {
+            strcat(menu->text, menu->files[i]);
+            strcat(menu->text, "\n");
+        }
+        strcat(menu->text, " ");
+    }
+}
+
+cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path) {
+    cdlv_menu* menu = malloc(sizeof(cdlv_menu));
+    if(!menu)
+        die("Could not allocate memory for the menu");
+
+    DIR* dir = opendir(path);
+    if(!dir) {
+        menu->path_exists = false;
+    } else {
+        menu->path_exists = true;
+        duplicate_string(&menu->path, path, strlen(path)+1);
+        menu->file_count = 0;
+        struct dirent* entry;
+        alloc_ptr_arr(&menu->files, 10, char*);
+        while((entry = readdir(dir)) != NULL) {
+            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                continue;
+            menu->files[menu->file_count] = calloc(strlen(entry->d_name)+1, sizeof(char));
+            strcpy(menu->files[menu->file_count], entry->d_name);
+            ++menu->file_count;
+        }
+    }
+    closedir(dir);
+
+    cdlv_text_create(base,
+            "../res/fonts/roboto.ttf", 16, 700,
+            10, 10,
+            255, 255, 255, 255);
+
+    alloc_ptr_arr(&menu->text, 5120, char);
+    if(menu->path_exists) {
+        menu->current_choice = 0;
+        menu_reprint(menu);
+    } else {
+        sprintf(menu->text, "Folder %s not found!", path);
+    }
+
+    cdlv_text_update(base, menu->text);
+
+    return menu;
+}
+
+void cdlv_menu_render(cdlv_base* base) {
+    cdlv_text_render(base);
+}
+
+void cdlv_menu_clean(cdlv_menu* menu) {
+    for(size_t i=0; i<menu->file_count; ++i)
+        free(menu->files[i]);
+    free(menu->files);
+    free(menu->text);
+    free(menu->path);
+    free(menu);
+}
+
+static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu) {
+    if((*menu)->current_choice >= 0 && (*menu)->current_choice < (*menu)->file_count) {
+        char* full_path;
+        alloc_ptr_arr(&full_path,
+                strlen((*menu)->path)+strlen((*menu)->files[(*menu)->current_choice])+3,
+                char);
+        sprintf(full_path, "%s/%s", (*menu)->path, (*menu)->files[(*menu)->current_choice]);
+        cdlv_menu_clean((*menu));
+        *menu = NULL;
+        const char* title = (*base)->title;
+        const size_t w = (*base)->w;
+        const size_t h = (*base)->h;
+        cdlv_clean_all((*base));
+        *base = NULL;
+        *base = cdlv_create(title, w, h);
+        (*base)->state = cdlv_main_run;
+        cdlv_read_file((*base), full_path);
+        free(full_path);
+        cdlv_start((*base));
+    }
+}
+
+void cdlv_menu_handle_keys(cdlv_base** base, cdlv_menu** menu, SDL_Event* e) {
+    if((*base)->can_interact) {
+        if(e->type == SDL_KEYUP && e->key.repeat == 0) {
+            switch(e->key.keysym.sym) {
+                case SDLK_UP:
+                    if((*menu)->current_choice > 0) {
+                        --(*menu)->current_choice;
+                        menu_reprint(*menu);
+                        cdlv_text_update((*base), (*menu)->text);
+                    }
+                    break;
+                case SDLK_DOWN:
+                    if((*menu)->current_choice < (*menu)->file_count) {
+                        ++(*menu)->current_choice;
+                        menu_reprint((*menu));
+                        cdlv_text_update((*base), (*menu)->text);
+                    }
+                    break;
+                case SDLK_RETURN: menu_load_script(base, menu); break;
+            }
+        }
+        if(e->type == SDL_CONTROLLERBUTTONUP) {
+            switch(e->cbutton.button) {
+                case SDL_CONTROLLER_BUTTON_DPAD_UP:
+                    if((*menu)->current_choice > 0) {
+                        --(*menu)->current_choice;
+                        menu_reprint(*menu);
+                        cdlv_text_update((*base), (*menu)->text);
+                    }
+                    break;
+                case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+                    if((*menu)->current_choice < (*menu)->file_count) {
+                        ++(*menu)->current_choice;
+                        menu_reprint((*menu));
+                        cdlv_text_update((*base), (*menu)->text);
+                    }
+                    break;
+                case SDL_CONTROLLER_BUTTON_A: menu_load_script(base, menu); break;
+            }
+        }
+    }
+}

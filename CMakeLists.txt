@@ -26,6 +26,7 @@ add_executable(${PROJECT_NAME}
     src/base.c
     src/parse.c
     src/cdlv.c
+    src/menu.c
 )
 
 include_directories(${PROJECT_NAME}

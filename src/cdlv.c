@@ -1,8 +1,4 @@
 #include "cdlv.h"
-#include <SDL_error.h>
-#include <SDL_render.h>
-#include <SDL_surface.h>
-#include <SDL_ttf.h>
 
 void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps) {
     #define canvas base->canvas
@@ -54,7 +50,7 @@ void cdlv_text_create(cdlv_base* base, const char* path,
     #undef text
 }
 
-static inline void cdlv_text_update(cdlv_base* base, const char* content) {
+void cdlv_text_update(cdlv_base* base, const char* content) {
     #define text base->text
     if(strlen(content)) {
         SDL_Surface* temp = NULL;
@@ -72,14 +68,14 @@ static inline void cdlv_text_update(cdlv_base* base, const char* content) {
     #undef text
 }
 
-static inline void cdlv_text_render(cdlv_base* base) {
+void cdlv_text_render(cdlv_base* base) {
     #define text base->text
     SDL_Rect quad = {text->x, text->y, text->w, text->h};
     SDL_RenderCopy(base->renderer, text->tex, NULL, &quad);
     #undef text
 }
 
-static inline void cdlv_load_images(cdlv_scene* scene) {
+static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
     alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
     #define imgs    scene->images
     #define paths   scene->image_paths
@@ -94,6 +90,18 @@ static inline void cdlv_load_images(cdlv_scene* scene) {
         if(!temp)
             diev("Could not load image "
             "with path \"%s\": %s", paths[i], SDL_GetError());
+
+        if(temp->w < canvas->w && temp->h < canvas->h) {
+            SDL_Surface* scaled = NULL;
+            scaled = SDL_CreateRGBSurfaceWithFormat(temp->flags, canvas->w, canvas->h,
+                    temp->format->BitsPerPixel, temp->format->format);
+            if(!scaled)
+                diev("Could not scale surface: %s", SDL_GetError());
+            if(SDL_BlitScaled(temp, NULL, scaled, NULL) < 0)
+                diev("Could not blit scaled surface: %s", SDL_GetError());
+            SDL_FreeSurface(temp);
+            temp = scaled;
+        }
 
         imgs[i] = NULL;
         imgs[i] = SDL_ConvertSurfaceFormat(temp, SDL_PIXELFORMAT_RGBA32, 0);
@@ -127,7 +135,7 @@ static inline void cdlv_scene_load(cdlv_base* base, const size_t index) {
         base->c_scene = index;
         base->c_image = 0;
         base->c_line  = 0;
-        cdlv_load_images(base->scenes[index]);
+        cdlv_load_images(base->canvas, base->scenes[index]);
         if(base->scenes[index]->type != cdlv_anim_once_scene) {
             cdlv_text_update(base, base->scenes[index]->script[base->c_line]);
             base->can_interact = true;
@@ -167,7 +175,7 @@ static inline void cdlv_update(cdlv_base* base) {
     #undef scene
 }
 
-static inline void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
+void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
     #define scene base->scenes[base->c_scene]
     if(base->can_interact) {
         if(e->type == SDL_KEYUP && e->key.repeat == 0) {
