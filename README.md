@@ -9,7 +9,7 @@ The goal is to create as lowest resource usage engine as possible. This is why t
   - have static backgrounds that are changed based on script file;
   - have animated loops;
   - be animated only once (without text);
-  - have one prompt for choosing one of 4 options to jump to another scene.
+  - prompt to jump to another scene based on player choice or scripted behavior.
 
 ## Documentation
  
