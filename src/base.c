@@ -61,6 +61,7 @@ cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h) {
 
     base->canvas        = NULL;
     base->text          = NULL;
+    base->choice        = NULL;
     base->scenes        = NULL;
     base->scene_count   = 0;
     base->c_line        = 0;
@@ -79,7 +80,19 @@ cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h) {
 void cdlv_clean_all(cdlv_base* base) {
     if(base->scenes) {
         for(size_t i=0; i<base->scene_count; ++i)
-            if(base->scenes[i]) free(base->scenes[i]);
+            if(base->scenes[i]) {
+                if(base->scenes[i]->image_paths) {
+                    for(size_t j=0; j<base->scenes[i]->image_count; ++j)
+                        if(base->scenes[i]->image_paths[j]) free(base->scenes[i]->image_paths[j]);
+                    free(base->scenes[i]->image_paths);
+                }
+                if(base->scenes[i]->script) {
+                    for(size_t j=0; j<base->scenes[i]->line_count; ++j)
+                        free(base->scenes[i]->script[j]);
+                    free(base->scenes[i]->script);
+                }
+                free(base->scenes[i]);
+            }
         free(base->scenes);
     }
     if(base->canvas) {

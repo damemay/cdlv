@@ -68,12 +68,6 @@ void cdlv_text_update(cdlv_base* base, const char* content) {
     #undef text
 }
 
-void cdlv_text_render(cdlv_base* base) {
-    #define text base->text
-    SDL_Rect quad = {text->x, text->y, text->w, text->h};
-    SDL_RenderCopy(base->renderer, text->tex, NULL, &quad);
-    #undef text
-}
 
 static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
     alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
@@ -118,19 +112,20 @@ static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
 static inline void cdlv_scene_clean(cdlv_scene* scene) {
     for(size_t i=0; i<scene->image_count; ++i) {
         SDL_FreeSurface(scene->images[i]);
-        free(scene->image_paths[i]);
+        // free(scene->image_paths[i]);
     }
     free(scene->images);
-    free(scene->image_paths);
+    scene->images = NULL;
+    // free(scene->image_paths);
 
-    for(size_t i=0; i<scene->line_count; ++i)
-        free(scene->script[i]);
-    free(scene->script);
+    // for(size_t i=0; i<scene->line_count; ++i)
+        // free(scene->script[i]);
+    // free(scene->script);
 
-    free(scene);
+    // free(scene);
 }
 
-static inline void cdlv_scene_load(cdlv_base* base, const size_t index) {
+static inline void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
     if(index < base->scene_count) {
         base->c_scene = index;
         base->c_image = 0;
@@ -141,55 +136,181 @@ static inline void cdlv_scene_load(cdlv_base* base, const size_t index) {
             base->can_interact = true;
         } else base->can_interact = false;
         if(base->c_scene) {
-            cdlv_scene_clean(base->scenes[index-1]);
-            base->scenes[index-1] = NULL;
+            cdlv_scene_clean(base->scenes[prev]);
+            // base->scenes[prev] = NULL;
         }
     }
 }
 
-void cdlv_start(cdlv_base* base) {
-    cdlv_scene_load(base, 0);
+static inline bool cdlv_change_image(cdlv_base* base, cdlv_scene* scene, const char* line) {
+    size_t i = 0;
+    if((sscanf(line, cdlv_tag_func_image " %lu", &i)) != 0)
+        if(i < scene->image_count) {
+            base->c_image = i;
+            return true;
+        }
+    return false;
 }
+
+static inline void cdlv_choice_create(cdlv_base* base) {
+    #define choice base->choice
+    choice = malloc(sizeof(cdlv_choice));
+    if(!choice)
+        die("Could not allocate memory for a new scripted choice!");
+
+    choice->count               = 0;
+    choice->current             = 0;
+    choice->state               = cdlv_parsing;
+    choice->destinations        = NULL;
+    choice->options             = NULL;
+    choice->prompt              = NULL;
+    alloc_ptr_arr(&choice->destinations, cdlv_max_choice_count, size_t);
+    alloc_ptr_arr(&choice->options, cdlv_max_choice_count, char*);
+    alloc_ptr_arr(&choice->prompt, cdlv_max_string_size, char);
+    #undef choice
+}
+
+static inline void cdlv_choice_clean(cdlv_base* base) {
+    #define choice base->choice
+    for(size_t i=0;i<cdlv_max_choice_count; ++i)
+        if(choice->options[i]) free(choice->options[i]);
+    free(choice->options);
+    free(choice->prompt);
+    free(choice->destinations);
+    free(choice);
+    choice = NULL;
+    #undef choice
+}
+
+static inline void cdlv_choice_add(cdlv_base* base, const char* line) {
+    #define choice base->choice
+    const char chars[12] = "1234567890 ";
+    size_t d = 0;
+    size_t s = 0;
+    if((sscanf(line, "%lu", &d)) != 0)
+        if(d < base->scene_count)
+            s = strspn(line, chars);
+    if(s>0 && choice->count < cdlv_max_choice_count) {
+        choice->destinations[choice->count] = d;
+        duplicate_string(&choice->options[choice->count], line+s, strlen(line+s)+1);
+        ++choice->count;
+    }
+    #undef choice
+}
+
+static inline void choice_update_prompt(cdlv_base* base) {
+    #define choice base->choice
+    if(choice->current < choice->count) {
+        sprintf(choice->prompt, cdlv_arrow);
+        for(size_t i=choice->current; i<choice->count; ++i) {
+            strcat(choice->prompt, choice->options[i]);
+            strcat(choice->prompt, "\n");
+        }
+        //strcat(choice->prompt, " ");
+    }
+    cdlv_text_update(base, choice->prompt);
+    #undef choice
+}
+
+static inline void cdlv_goto(cdlv_base* base, const char* line) {
+    size_t i = 0;
+    if((sscanf(line, cdlv_tag_func_goto " %lu", &i)) != 0)
+        if(i < base->scene_count)
+            cdlv_scene_load(base, base->c_scene, i);
+}
+
 
 static inline void cdlv_update(cdlv_base* base) {
     #define scene base->scenes[base->c_scene]
     #define line base->scenes[base->c_scene]->script[base->c_line]
     if(scene->type == cdlv_anim_once_scene) {
-        cdlv_scene_load(base, base->c_scene+1);
+        cdlv_scene_load(base, base->c_scene, base->c_scene+1);
     } else {
         if(base->c_line == scene->line_count-1)
-            cdlv_scene_load(base, base->c_scene+1);
+            cdlv_scene_load(base, base->c_scene, base->c_scene+1);
         else if(base->c_line < scene->line_count) {
+            // update current line
             ++base->c_line;
             if(line[0] == '@') {
-                size_t p = strspn(line, "@");
-                size_t b = 0;
-                if((b = strtoul(line+p, NULL, 0)) < scene->image_count) {
-                    base->c_image = b;
+                // @ is now a function determinator, we need to check what it actually does
+                if(strstr(line, cdlv_tag_func_image)) {
+                    if(cdlv_change_image(base, scene, line))
+                        cdlv_update(base);
+                } else if(strstr(line, cdlv_tag_func_choice)) {
+                    cdlv_choice_create(base);
+                    cdlv_update(base);
+                } else if(strstr(line, cdlv_tag_func_end)) {
+                    base->choice->state = cdlv_parsed;
+                    choice_update_prompt(base);
+                } else if(strstr(line, cdlv_tag_func_goto)) {
+                    cdlv_goto(base, line);
+                }
+            } else if(base->choice) {
+                if(base->choice->state == cdlv_parsing) {
+                    cdlv_choice_add(base, line);
                     cdlv_update(base);
                 }
-            } cdlv_text_update(base, line);
+            } else cdlv_text_update(base, line);
         }
     }
     #undef line
     #undef scene
 }
 
+static inline bool cdlv_choice_switch(cdlv_base* base, size_t ch) {
+    #define choice base->choice
+    if(choice->destinations[ch]) {
+        cdlv_scene_load(base, base->c_scene, choice->destinations[ch]);
+        return true;
+    }
+    return false;
+    #undef choice
+}
+
+static inline void cdlv_choice_handler(cdlv_base* base, size_t ch) {
+    if(cdlv_choice_switch(base, ch)) cdlv_choice_clean(base);
+}
+
 void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
-    #define scene base->scenes[base->c_scene]
-    if(base->can_interact) {
-        if(e->type == SDL_KEYUP && e->key.repeat == 0) {
-            switch(e->key.keysym.sym) {
+    if(base->can_interact && !base->choice) {
+        if(e->type == SDL_KEYUP && e->key.repeat == 0) switch(e->key.keysym.sym) {
                 case SDLK_RETURN: cdlv_update(base); break;
-            }
         }
-        if(e->type == SDL_CONTROLLERBUTTONUP) {
-            switch(e->cbutton.button) {
+        if(e->type == SDL_CONTROLLERBUTTONUP) switch(e->cbutton.button) {
                 case SDL_CONTROLLER_BUTTON_A: cdlv_update(base); break;
-            }
+        }
+    } else if(base->can_interact && base->choice) {
+        if(e->type == SDL_KEYUP && e->key.repeat == 0) switch(e->key.keysym.sym) {
+                case SDLK_UP:
+                    if(base->choice->current > 0) {
+                        --base->choice->current;
+                        choice_update_prompt(base);
+                    } break;
+                case SDLK_DOWN:
+                    if(base->choice->current < base->choice->count) {
+                        ++base->choice->current;
+                        choice_update_prompt(base);
+                    } break;
+                case SDLK_RETURN:
+                    cdlv_choice_handler(base, base->choice->current);
+                    break;
+        }
+        if(e->type == SDL_CONTROLLERBUTTONUP) switch(e->cbutton.button) {
+                case SDL_CONTROLLER_BUTTON_DPAD_UP:
+                    if(base->choice->current > 0) {
+                        --base->choice->current;
+                        choice_update_prompt(base);
+                    } break;
+                case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+                    if(base->choice->current < base->choice->count) {
+                        ++base->choice->current;
+                        choice_update_prompt(base);
+                    } break;
+                case SDL_CONTROLLER_BUTTON_A:
+                    cdlv_choice_handler(base, base->choice->current);
+                    break;
         }
     }
-    #undef scene
 }
 
 static inline void* cdlv_scene_pixels(cdlv_scene* scene, const size_t index) {
@@ -239,7 +360,7 @@ void cdlv_render(cdlv_base* base) {
         }                                                   \
     }
     SDL_RenderClear(base->renderer);
-    if(scene->type == cdlv_default_scene) {
+    if(scene->type == cdlv_static_scene) {
         cdlv_canvas_copy_buffer(canvas,
                 cdlv_scene_pixels(scene, base->c_image));
     } else if(scene->type == cdlv_anim_scene) {
@@ -249,7 +370,7 @@ void cdlv_render(cdlv_base* base) {
             anim();
         } else {
             base->can_interact = true;
-            cdlv_text_update(base, ">>");
+            cdlv_text_update(base, cdlv_continue);
         }
     }
     SDL_RenderCopy(base->renderer, canvas->tex, NULL, NULL);
@@ -271,4 +392,15 @@ void cdlv_loop_start(cdlv_base* base) {
 void cdlv_loop_end(cdlv_base* base) {
     SDL_RenderPresent(base->renderer);
     base->l_tick = base->c_tick;
+}
+
+void cdlv_start(cdlv_base* base) {
+    cdlv_scene_load(base, 0, 0);
+}
+
+void cdlv_text_render(cdlv_base* base) {
+    #define text base->text
+    SDL_Rect quad = {text->x, text->y, text->w, text->h};
+    SDL_RenderCopy(base->renderer, text->tex, NULL, &quad);
+    #undef text
 }

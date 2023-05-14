@@ -1,14 +1,15 @@
 # cdlv
 Simple SDL2-based engine and scripting system for ADV/VN style games being made in pure C.
 
-The goal is to create as lowest resource usage engine as possible. This is why the scripting system divides every type of behavior into scenes with separately loading resources.
+The goal is to create as lowest resource usage engine as possible. This is why the scripting system divides every data-heavy behavior into scenes with separately loaded resources.
 
 ## Current state
-- **Simple scripting, scene-based framework:**
-  - **Scenes can:**
-    - have static backgrounds, changeable on script prompt;
-    - have animated loops;
-    - be animated only once (without text).
+- **Simple scripting, scene-based framework**
+- **Scenes can:**
+  - have static backgrounds that are changed based on script file;
+  - have animated loops;
+  - be animated only once (without text);
+  - have one prompt for choosing one of 4 options to jump to another scene.
 
 ## Documentation
  
@@ -22,26 +23,30 @@ The goal is to create as lowest resource usage engine as possible. This is why t
   [scene count] [images width] [images height] [framerate for animations] [font .ttf path] [font size]
   ```
 - Each scene **must** be declared with tag: `!scene`
-  - Right below it should be one of the tags defining scene type:
-    - `!bg` - static backgrounds scene,
-    - `!anim` - animated loop scene,
-    - `!anim_once` - single loop animation scene.
-  - Each consequent line below the tag is path to a single image/frame in .jpg/.png
-  - `!script` tag declares that each consequent line below is a text to display:
-    - blank lines are not parsed,
-    - lines starting with `@` are prompts to change image. `@` should be followed by image index.
-- All indexes start from 0.
+- Right below it should be one of the tags defining scene type:
+  - `!bg` - static backgrounds scene,
+  - `!anim` - animated loop scene,
+  - `!anim_once` - single loop animation scene.
+    - Each consequent line below the tag is path to a single image/frame in .jpg/.png
+- `!script` tag declares that each consequent line below is a text to be parsed:
+  - blank lines are not parsed,
+  - lines starting with `@` are prompts to call a function. Currently there are three:
+    - `@image [index]` changes background image in static scenes;
+    - `@goto [index]` jump to scene of index;
+    - `@choice` starts parsing each consequent line as a option to be chosen by the player;
+    - `@end` ends parsing lines as choices and displays them on screen.
+- **All indexes start from 0.**
 - Default scene image starts from the 0 index, so there's no need to set it at the start of script.
 - Paths can be either full or relative from the executable file.
-- Images width/height that is smaller than window width/height will be scaled to match window.
+- Images that are smaller than declared size are scaled to match it.
 
 </details>
 
 <details>
   
-  <summary><b>Sample script and main.c</b></summary>
+  <summary><b>Example script and main.c</b></summary>
   
-##### sample.adv
+##### example.adv
 ```
 2 640 480 3 res/esteban.ttf 32
 
@@ -51,7 +56,7 @@ The goal is to create as lowest resource usage engine as possible. This is why t
     res/black.png
   !scene
     "I don't like rainy days. I hope it will get sunnier soon."
-    @1
+    @image 1
     Later that day...
 
 !scene
@@ -79,7 +84,7 @@ The goal is to create as lowest resource usage engine as possible. This is why t
 
 int main() {
     cdlv_base* base = cdlv_create("sample", 640, 480);
-    cdlv_read_file(base, "res/sample.adv");
+    cdlv_read_file(base, "res/example.adv");
     cdlv_start(base);
     
     while(base->run) {
@@ -96,11 +101,13 @@ int main() {
 </details>
 
 ## To do
-- [ ] 4-button choice system + flowscripts for jumping between scenes.
+- [x] ~~4-button~~ choice system + ~~flowscripts for~~ jumping between scenes.
 - [ ] .adv files formatter:
   - auto scene,resources,script lines counting, so the main app doesn't have to do that;
   - format into something that would allow more direct parsing.
-- [ ] app for playtesting .adv files, similiar to renpy.
+- [ ] refactor parsing code
+- [x] app for playtesting .adv files, similiar to renpy.
+  - currently as a proof of concept in menu.c (to be improved upon later on)
 - [ ] transition effects between images (dissolve, fade in/out, etc.).
 - [ ] typewriter effect.
 - [ ] make a consistent gui

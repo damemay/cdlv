@@ -55,7 +55,7 @@ static inline void free_file_in_lines(char** file, const size_t line_count) {
 }
 
 
-static inline void cdlv_scenes_alloc(cdlv_base* base, const size_t count) {
+static inline void scenes_alloc(cdlv_base* base, const size_t count) {
     base->scenes = calloc(count, sizeof(cdlv_scene));
     if(!base->scenes)
         die("Could not allocate memory for scene list!");
@@ -74,31 +74,14 @@ static inline void cdlv_scenes_alloc(cdlv_base* base, const size_t count) {
 }
 
 static inline void cdlv_parse(cdlv_base* base, char* const* file, const size_t line_count) {
-    /*
-     * Actual parsing begins here.
-     *
-     * #cdlv_check_all_parse_tags gets called on every loop
-     * to check if there is a tag change:
-     *      if.1: on: !scene
-     *          increment loop scene index;
-     *      if.2: on: !bg
-     *          init calloc current scene image paths array;
-     *      if.3: on: !anim
-     *          init calloc current scene image paths array;
-     *      if.4: on: !anim_once
-     *          init calloc current scene image paths array;
-     *      if.5: on: !script
-     *          init calloc current scene script array;
-     *
-     */
     #define cdlv_check_all_parse_tags(line, scene)          \
     if(strstr(line, cdlv_tag_scene)) {                      \
-        parse_mode = cdlv_default_scene;                    \
+        parse_mode = cdlv_static_scene;                    \
         ++scene_idx;                                        \
-        scene->type = cdlv_default_scene; break;            \
+        scene->type = cdlv_static_scene; break;            \
     } else if(strstr(line, cdlv_tag_bg)) {                  \
-        parse_mode = cdlv_default_scene;                    \
-        scene->type = cdlv_default_scene; break;            \
+        parse_mode = cdlv_static_scene;                    \
+        scene->type = cdlv_static_scene; break;            \
     } else if(strstr(line, cdlv_tag_anim_once)) {           \
         parse_mode = cdlv_anim_once_scene;                  \
         scene->type = cdlv_anim_once_scene; break;          \
@@ -114,10 +97,11 @@ static inline void cdlv_parse(cdlv_base* base, char* const* file, const size_t l
     for(size_t i=1; i<line_count; ++i) {
         switch(parse_mode) {
             case cdlv_none:
-                if(strstr(file[i], cdlv_tag_scene))
-                    parse_mode = cdlv_default_scene;
+                if(strstr(file[i], cdlv_tag_scene)) {
+                    parse_mode = cdlv_static_scene;
+                }
                 break;
-            case cdlv_default_scene:
+            case cdlv_static_scene:
                 cdlv_check_all_parse_tags(file[i],
                         base->scenes[scene_idx]);
                 if(strspn(file[i], " ") == 0) break;
@@ -150,13 +134,13 @@ static inline void cdlv_parse(cdlv_base* base, char* const* file, const size_t l
     size_t script_line_idx = 0;
     #define cdlv_check_all_parse_tags(line, scene)          \
     if(strstr(line, cdlv_tag_scene)) {                      \
-        parse_mode = cdlv_default_scene;                    \
+        parse_mode = cdlv_static_scene;                    \
         ++scene_idx;                                        \
         image_idx = 0;                                      \
         script_line_idx = 0;                                \
         break;            \
     } else if(strstr(line, cdlv_tag_bg)) {                  \
-        parse_mode = cdlv_default_scene;                    \
+        parse_mode = cdlv_static_scene;                    \
         alloc_ptr_arr(&scene->image_paths,                  \
                 scene->image_count, char*);                 \
         break;            \
@@ -181,9 +165,9 @@ static inline void cdlv_parse(cdlv_base* base, char* const* file, const size_t l
         switch(parse_mode) {
             case cdlv_none:
                 if(strstr(file[i], cdlv_tag_scene))
-                    parse_mode = cdlv_default_scene;
+                    parse_mode = cdlv_static_scene;
                 break;
-            case cdlv_default_scene:
+            case cdlv_static_scene:
                 cdlv_check_all_parse_tags(file[i],
                         base->scenes[scene_idx]);
                 /*
@@ -257,11 +241,11 @@ void cdlv_read_file(cdlv_base* base, const char* file) {
         diev("Wrong data on the first line: %s", script[0]);
 
     cdlv_canvas_create(base, canvas_w, canvas_h, framerate);
-    cdlv_text_create(base, font_path, font_size, 700, 50, 400,
+    cdlv_text_create(base, font_path, font_size, 800, 50, 400,
             255, 255, 255, 255);
 
     base->scene_count = scene_count;
-    cdlv_scenes_alloc(base, scene_count);
+    scenes_alloc(base, scene_count);
 
     cdlv_parse(base, script, lines);
     free_file_in_lines(script, lines);

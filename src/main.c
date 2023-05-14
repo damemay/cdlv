@@ -28,17 +28,11 @@ int main(int argc, char* argv[]) {
                 cdlv_menu_render(base);
                 break;
             case cdlv_main_run:
-                while(SDL_PollEvent(&base->event) != 0) {
-                    if(base->event.type == SDL_QUIT) base->run = false;
-                    cdlv_handle_keys(base, &base->event);
-                }
-                base->c_tick = SDL_GetTicks64();
-                base->e_ticks = (base->c_tick - base->l_tick) / 1000.0f;
+                cdlv_loop_start(base);
                 cdlv_render(base);
                 break;
         }
-        SDL_RenderPresent(base->renderer);
-        base->l_tick = base->c_tick;
+        cdlv_loop_end(base);
     }
 
     cdlv_clean_all(base);

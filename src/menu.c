@@ -4,7 +4,7 @@
 static inline void menu_reprint(cdlv_menu* menu) {
     if(menu->current_choice < menu->file_count) {
         strcpy(menu->text, menu->path);
-        strcat(menu->text, "\n>");
+        strcat(menu->text, "\n" cdlv_arrow);
         for(size_t i=menu->current_choice; i<menu->file_count; ++i) {
             strcat(menu->text, menu->files[i]);
             strcat(menu->text, "\n");
@@ -26,7 +26,7 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path) {
         duplicate_string(&menu->path, path, strlen(path)+1);
         menu->file_count = 0;
         struct dirent* entry;
-        alloc_ptr_arr(&menu->files, 10, char*);
+        alloc_ptr_arr(&menu->files, cdlv_max_menu_entries, char*);
         while((entry = readdir(dir)) != NULL) {
             if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
                 continue;
@@ -42,7 +42,7 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path) {
             10, 10,
             255, 255, 255, 255);
 
-    alloc_ptr_arr(&menu->text, 5120, char);
+    alloc_ptr_arr(&menu->text, cdlv_max_string_size, char);
     if(menu->path_exists) {
         menu->current_choice = 0;
         menu_reprint(menu);

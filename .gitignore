@@ -39,3 +39,4 @@ compile_commands.json
 .cache/
 CMakeListsV.txt
 sce_sys/
+parser/
