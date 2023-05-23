@@ -17,6 +17,8 @@
 #define cdlv_tag_bg             "!bg"
 #define cdlv_tag_anim           "!anim"
 #define cdlv_tag_anim_once      "!anim_once"
+#define cdlv_tag_anim_wait      "!anim_wait"
+#define cdlv_tag_anim_text      "!anim_text"
 #define cdlv_tag_script         "!script"
 
 #define cdlv_tag_func_image     "@image"

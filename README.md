@@ -7,8 +7,8 @@ The goal is to create as lowest resource usage engine as possible. This is why t
 - **Simple scripting, scene-based framework**
 - **Scenes can:**
   - have static backgrounds that are changed based on script file;
-  - have animated loops;
-  - be animated only once (without text);
+  - have looped animation;
+  - have single loop animation;
   - prompt to jump to another scene based on player choice or scripted behavior.
 
 ## Documentation
@@ -26,7 +26,9 @@ The goal is to create as lowest resource usage engine as possible. This is why t
 - Right below it should be one of the tags defining scene type:
   - `!bg` - static backgrounds scene,
   - `!anim` - animated loop scene,
-  - `!anim_once` - single loop animation scene.
+  - `!anim_once` - single loop animation scene that skips when animation ends.
+  - `!anim_wait` - single loop animation scene that waits for user input when animation ends.
+  - `!anim_text` - single loop animation scene that renders script. to continue, animation has to end and the script has to be read.
     - Each consequent line below the tag is path to a single image/frame in .jpg/.png
 - `!script` tag declares that each consequent line below is a text to be parsed:
   - blank lines are not parsed,
@@ -101,13 +103,16 @@ int main() {
 </details>
 
 ## To do
-- [x] ~~4-button~~ choice system + ~~flowscripts for~~ jumping between scenes.
+- [ ] rename scene definition tags.
+- [ ] refactor parsing code.
+- [ ] dissolve effect between images.
+- [ ] typewriter effect.
+- [ ] make a consistent gui.
 - [ ] .adv files formatter:
   - auto scene,resources,script lines counting, so the main app doesn't have to do that;
   - format into something that would allow more direct parsing.
-- [ ] refactor parsing code
+- [x] anim_once option --> automatically continue or wait for player input
+  - also allow for text to be rendered if there is script added.
 - [x] app for playtesting .adv files, similiar to renpy.
   - currently as a proof of concept in menu.c (to be improved upon later on)
-- [ ] transition effects between images (dissolve, fade in/out, etc.).
-- [ ] typewriter effect.
-- [ ] make a consistent gui
+- [x] ~~4-button~~ choice system + ~~flowscripts for~~ jumping between scenes.

@@ -85,6 +85,12 @@ static inline void cdlv_parse(cdlv_base* base, char* const* file, const size_t l
     } else if(strstr(line, cdlv_tag_anim_once)) {           \
         parse_mode = cdlv_anim_once_scene;                  \
         scene->type = cdlv_anim_once_scene; break;          \
+    } else if(strstr(line, cdlv_tag_anim_wait)) {           \
+        parse_mode = cdlv_anim_wait_scene;                  \
+        scene->type = cdlv_anim_wait_scene; break;          \
+    } else if(strstr(line, cdlv_tag_anim_text)) {           \
+        parse_mode =  cdlv_anim_text_scene;                  \
+        scene->type = cdlv_anim_text_scene; break;          \
     } else if(strstr(line, cdlv_tag_anim)) {                \
         parse_mode = cdlv_anim_scene;                       \
         scene->type = cdlv_anim_scene; break;               \
@@ -119,6 +125,18 @@ static inline void cdlv_parse(cdlv_base* base, char* const* file, const size_t l
                 if(strspn(file[i], " ") == 0) break;
                 ++base->scenes[scene_idx]->image_count;
                 break;
+            case cdlv_anim_wait_scene:
+                cdlv_check_all_parse_tags(file[i],
+                        base->scenes[scene_idx]);
+                if(strspn(file[i], " ") == 0) break;
+                ++base->scenes[scene_idx]->image_count;
+                break;
+            case cdlv_anim_text_scene:
+                cdlv_check_all_parse_tags(file[i],
+                        base->scenes[scene_idx]);
+                if(strspn(file[i], " ") == 0) break;
+                ++base->scenes[scene_idx]->image_count;
+                break;
             case cdlv_script:
                 cdlv_check_all_parse_tags(file[i],
                         base->scenes[scene_idx]);
@@ -146,6 +164,16 @@ static inline void cdlv_parse(cdlv_base* base, char* const* file, const size_t l
         break;            \
     } else if(strstr(line, cdlv_tag_anim_once)) {           \
         parse_mode = cdlv_anim_once_scene;                  \
+        alloc_ptr_arr(&scene->image_paths,                  \
+                scene->image_count, char*);                 \
+        break;          \
+    } else if(strstr(line, cdlv_tag_anim_wait)) {           \
+        parse_mode = cdlv_anim_wait_scene;                  \
+        alloc_ptr_arr(&scene->image_paths,                  \
+                scene->image_count, char*);                 \
+        break;          \
+    } else if(strstr(line, cdlv_tag_anim_text)) {           \
+        parse_mode = cdlv_anim_text_scene;                  \
         alloc_ptr_arr(&scene->image_paths,                  \
                 scene->image_count, char*);                 \
         break;          \
@@ -198,10 +226,26 @@ static inline void cdlv_parse(cdlv_base* base, char* const* file, const size_t l
             case cdlv_anim_once_scene:
                 cdlv_check_all_parse_tags(file[i],
                         base->scenes[scene_idx]);
-                /*
-                 * Current line did not have any tags,
-                 * copy info about resources saved on this line.
-                 */
+                if((w_space = strspn(file[i], " ")) == 0) break;
+                str_size = (strlen(file[i]+w_space)+1);
+                duplicate_string(&base->scenes[scene_idx]->
+                        image_paths[image_idx],
+                        file[i]+w_space, str_size);
+                ++image_idx;
+                break;
+            case cdlv_anim_wait_scene:
+                cdlv_check_all_parse_tags(file[i],
+                        base->scenes[scene_idx]);
+                if((w_space = strspn(file[i], " ")) == 0) break;
+                str_size = (strlen(file[i]+w_space)+1);
+                duplicate_string(&base->scenes[scene_idx]->
+                        image_paths[image_idx],
+                        file[i]+w_space, str_size);
+                ++image_idx;
+                break;
+            case cdlv_anim_text_scene:
+                cdlv_check_all_parse_tags(file[i],
+                        base->scenes[scene_idx]);
                 if((w_space = strspn(file[i], " ")) == 0) break;
                 str_size = (strlen(file[i]+w_space)+1);
                 duplicate_string(&base->scenes[scene_idx]->

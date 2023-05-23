@@ -103,6 +103,9 @@ static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
             diev("Could not convert surfaces "
             "when handling image with path "
             "\"%s\": %s", paths[i], SDL_GetError());
+        if(SDL_SetSurfaceBlendMode(imgs[i], SDL_BLENDMODE_BLEND) < 0)
+            diev("Could not set alpha blending on image with path \"%s\": %s",
+                paths[i], SDL_GetError());
         free(temp);
     }
     #undef paths
@@ -131,7 +134,7 @@ static inline void cdlv_scene_load(cdlv_base* base, const size_t prev, const siz
         base->c_image = 0;
         base->c_line  = 0;
         cdlv_load_images(base->canvas, base->scenes[index]);
-        if(base->scenes[index]->type != cdlv_anim_once_scene) {
+        if(base->scenes[index]->type != cdlv_anim_once_scene && base->scenes[index]->type != cdlv_anim_wait_scene) {
             cdlv_text_update(base, base->scenes[index]->script[base->c_line]);
             base->can_interact = true;
         } else base->can_interact = false;
@@ -223,12 +226,16 @@ static inline void cdlv_goto(cdlv_base* base, const char* line) {
 static inline void cdlv_update(cdlv_base* base) {
     #define scene base->scenes[base->c_scene]
     #define line base->scenes[base->c_scene]->script[base->c_line]
-    if(scene->type == cdlv_anim_once_scene) {
+    if(scene->type == cdlv_anim_once_scene
+        || scene->type == cdlv_anim_wait_scene) {
         cdlv_scene_load(base, base->c_scene, base->c_scene+1);
     } else {
-        if(base->c_line == scene->line_count-1)
-            cdlv_scene_load(base, base->c_scene, base->c_scene+1);
-        else if(base->c_line < scene->line_count) {
+        if(base->c_line == scene->line_count-1) {
+            if(scene->type == cdlv_anim_text_scene && base->c_image == scene->image_count-1)
+                cdlv_scene_load(base, base->c_scene, base->c_scene+1);
+            else if(scene->type != cdlv_anim_text_scene)
+                cdlv_scene_load(base, base->c_scene, base->c_scene+1);
+        } else if(base->c_line < scene->line_count) {
             // update current line
             ++base->c_line;
             if(line[0] == '@') {
@@ -365,12 +372,18 @@ void cdlv_render(cdlv_base* base) {
                 cdlv_scene_pixels(scene, base->c_image));
     } else if(scene->type == cdlv_anim_scene) {
         anim();
-    } else if(scene->type == cdlv_anim_once_scene) {
+    } else if(scene->type == cdlv_anim_text_scene) {
+        if(base->c_image != scene->image_count-1) anim();
+    } else if(scene->type == cdlv_anim_once_scene
+            || scene->type == cdlv_anim_wait_scene) {
         if(base->c_image != scene->image_count-1) {
             anim();
         } else {
             base->can_interact = true;
-            cdlv_text_update(base, cdlv_continue);
+            if(scene->type == cdlv_anim_once_scene)
+                cdlv_update(base);
+            else if(scene->type == cdlv_anim_wait_scene)
+                cdlv_text_update(base, cdlv_continue);
         }
     }
     SDL_RenderCopy(base->renderer, canvas->tex, NULL, NULL);
