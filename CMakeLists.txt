@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 
 option(VITA "Build for vita" OFF)
+option(MINGW "Build with mingw64" OFF)
 
 if(VITA)
 
@@ -104,6 +105,15 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
     add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
 endif()
 
+if(MINGW)
+add_executable(${PROJECT_NAME} WIN32
+    src/main.c
+    src/base.c
+    src/parse.c
+    src/cdlv.c
+    src/menu.c
+)
+else()
 add_executable(${PROJECT_NAME}
     src/main.c
     src/base.c
@@ -111,6 +121,7 @@ add_executable(${PROJECT_NAME}
     src/cdlv.c
     src/menu.c
 )
+endif()
 
 include_directories(${PROJECT_NAME}
     ${SDL2_INCLUDE_DIRS}
@@ -124,6 +135,14 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
         SDL2_image
         SDL2_ttf
         -fsanitize=address
+    )
+elseif(MINGW)
+    target_link_libraries(${PROJECT_NAME}
+        mingw32
+        SDL2main
+        SDL2
+        SDL2_image
+        SDL2_ttf
     )
 else()
     target_link_libraries(${PROJECT_NAME}
