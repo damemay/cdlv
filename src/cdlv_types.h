@@ -14,6 +14,7 @@ typedef enum {
     cdlv_anim_wait_scene,
     cdlv_anim_text_scene,
     cdlv_script,
+    cdlv_scene_decl,
     cdlv_none,
 } cdlv_type;
 

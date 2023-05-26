@@ -16,17 +16,17 @@ static inline void menu_reprint(cdlv_menu* menu) {
 cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path) {
     cdlv_menu* menu = malloc(sizeof(cdlv_menu));
     if(!menu)
-        die("Could not allocate memory for the menu");
+        cdlv_die("Could not allocate memory for the menu");
 
     DIR* dir = opendir(path);
     if(!dir) {
         menu->path_exists = false;
     } else {
         menu->path_exists = true;
-        duplicate_string(&menu->path, path, strlen(path)+1);
+        cdlv_duplicate_string(&menu->path, path, strlen(path)+1);
         menu->file_count = 0;
         struct dirent* entry;
-        alloc_ptr_arr(&menu->files, cdlv_max_menu_entries, char*);
+        cdlv_alloc_ptr_arr(&menu->files, cdlv_max_menu_entries, char*);
         while((entry = readdir(dir)) != NULL) {
             if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
                 continue;
@@ -42,7 +42,7 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path) {
             10, 10,
             255, 255, 255, 255);
 
-    alloc_ptr_arr(&menu->text, cdlv_max_string_size, char);
+    cdlv_alloc_ptr_arr(&menu->text, cdlv_max_string_size, char);
     if(menu->path_exists) {
         menu->current_choice = 0;
         menu_reprint(menu);
@@ -71,7 +71,7 @@ void cdlv_menu_clean(cdlv_menu* menu) {
 static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu) {
     if((*menu)->current_choice >= 0 && (*menu)->current_choice < (*menu)->file_count) {
         char* full_path;
-        alloc_ptr_arr(&full_path,
+        cdlv_alloc_ptr_arr(&full_path,
                 strlen((*menu)->path)+strlen((*menu)->files[(*menu)->current_choice])+3,
                 char);
         sprintf(full_path, "%s/%s", (*menu)->path, (*menu)->files[(*menu)->current_choice]);

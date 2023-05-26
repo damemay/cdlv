@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
     cdlv_menu* menu = NULL;
 
     #ifndef __vita__
-    menu = cdlv_menu_create(base, "/home/mar/scripts");
+    menu = cdlv_menu_create(base, "scripts");
     #else
     menu = cdlv_menu_create(base, "ux0:/data/scripts");
     #endif

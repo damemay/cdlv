@@ -24,10 +24,10 @@ include_directories(
 
 add_executable(${PROJECT_NAME}
   src/main.c
-  src/base.c
-  src/cdlv.c
-  src/parse.c
-  src/menu.c
+  src/cdlv_base.c
+  src/cdlv_main.c
+  src/cdlv_parse.c
+  src/cdlv_menu.c
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -116,10 +116,10 @@ add_executable(${PROJECT_NAME} WIN32
 else()
 add_executable(${PROJECT_NAME}
     src/main.c
-    src/base.c
-    src/parse.c
-    src/cdlv.c
-    src/menu.c
+    src/cdlv_base.c
+    src/cdlv_parse.c
+    src/cdlv_main.c
+    src/cdlv_menu.c
 )
 endif()
 

@@ -1,10 +1,10 @@
 #ifndef CDLV_MACROS_H
 #define CDLV_MACROS_H
 
-#define diev(msg, ...) printf("[DIE] " msg "\n", __VA_ARGS__), exit(EXIT_FAILURE)
-#define die(msg) printf("[DIE] " msg "\n")
-#define logv(msg, ...) printf("[LOG] " msg "\n", __VA_ARGS__)
-#define log(msg) printf("[LOG] " msg "\n")
+#define cdlv_diev(msg, ...) printf("[DIE] " msg "\n", __VA_ARGS__), exit(EXIT_FAILURE)
+#define cdlv_die(msg) printf("[DIE] " msg "\n")
+#define cdlv_logv(msg, ...) printf("[LOG] " msg "\n", __VA_ARGS__)
+#define cdlv_log(msg) printf("[LOG] " msg "\n")
 
 #define cdlv_max_string_size    5120
 #define cdlv_max_choice_count   10
@@ -26,21 +26,21 @@
 #define cdlv_tag_func_choice    "@choice"
 #define cdlv_tag_func_end       "@end"
 
-#define duplicate_string(dest, src, size)   \
-{                                           \
-    *dest = calloc(size, sizeof(char));     \
-    if(!dest)                               \
-        die("Could not "                    \
-        "allocate destination for "         \
-        "string duplication!");             \
-    strcpy(*dest, src);                     \
+#define cdlv_duplicate_string(dest, src, size)  \
+{                                               \
+    *dest = calloc(size, sizeof(char));         \
+    if(!dest)                                   \
+        cdlv_die("Could not "                   \
+        "allocate destination for "             \
+        "string duplication!");                 \
+    strcpy(*dest, src);                         \
 }
-#define alloc_ptr_arr(arr_ptr, count, size_type)    \
-{                                                   \
-    *arr_ptr = calloc(count, sizeof(size_type));    \
-    if(!*arr_ptr)                                   \
-        die("Could not allocate "                   \
-        "memory for array!");                       \
+#define cdlv_alloc_ptr_arr(arr_ptr, count, size_type)   \
+{                                                       \
+    *arr_ptr = calloc(count, sizeof(size_type));        \
+    if(!*arr_ptr)                                       \
+        cdlv_die("Could not allocate "                  \
+        "memory for array!");                           \
 }
 
 #endif

@@ -5,24 +5,24 @@ static inline void sdl_init(const char* title,
         SDL_Window** sdl_w, SDL_Renderer** sdl_r,
         SDL_GameController** sdl_g) {
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
-        diev("Could not init SDL: %s", SDL_GetError());
+        cdlv_diev("Could not init SDL: %s", SDL_GetError());
     atexit(SDL_Quit);
 
     if(!(*sdl_w = SDL_CreateWindow(title,
                     SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
                     w, h, SDL_WINDOW_SHOWN)))
-        diev("Could not create SDL_Window: %s", SDL_GetError());
+        cdlv_diev("Could not create SDL_Window: %s", SDL_GetError());
 
     if(!(*sdl_r = SDL_CreateRenderer(*sdl_w, -1,
                     SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)))
-        diev("Could not create SDL_Renderer: %s", SDL_GetError());
+        cdlv_diev("Could not create SDL_Renderer: %s", SDL_GetError());
 
     if(!(IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG) & IMG_INIT_JPG | IMG_INIT_PNG))
-        diev("Could not init SDL_image: %s", IMG_GetError());
+        cdlv_diev("Could not init SDL_image: %s", IMG_GetError());
     atexit(IMG_Quit);
 
     if(TTF_Init() == -1)
-        diev("Could not init SDL_ttf: %s", TTF_GetError());
+        cdlv_diev("Could not init SDL_ttf: %s", TTF_GetError());
     atexit(TTF_Quit);
     
     int joysticks;
@@ -46,7 +46,7 @@ cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h) {
     cdlv_base* base = NULL;
     base = malloc(sizeof(cdlv_base));
     if(!base)
-        die("Could not allocate memory for cdlv_base!");
+        cdlv_die("Could not allocate memory for cdlv_base!");
 
     base->window        = NULL;
     base->renderer      = NULL;
