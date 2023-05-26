@@ -20,7 +20,7 @@ The goal is to create as lowest resource usage engine as possible. This is why t
 - First line **must** contain data for the whole .adv file:
 
   ```
-  [scene count] [images width] [images height] [framerate for animations] [font .ttf path] [font size]
+  [images width] [images height] [framerate for animations] [font .ttf path] [font size]
   ```
 - Each scene **must** be declared with tag: `!scene`
 - Right below it should be one of the tags defining scene type:
@@ -104,13 +104,10 @@ int main() {
 
 ## To do
 - [ ] rename scene definition tags.
-- [ ] refactor parsing code.
 - [ ] dissolve effect between images.
 - [ ] typewriter effect.
 - [ ] make a consistent gui.
-- [ ] .adv files formatter:
-  - auto scene,resources,script lines counting, so the main app doesn't have to do that;
-  - format into something that would allow more direct parsing.
+- [x] refactor parsing code.
 - [x] anim_once option --> automatically continue or wait for player input
   - also allow for text to be rendered if there is script added.
 - [x] app for playtesting .adv files, similiar to renpy.
