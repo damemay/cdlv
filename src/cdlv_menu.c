@@ -56,6 +56,7 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path) {
 }
 
 void cdlv_menu_render(cdlv_base* base) {
+    SDL_RenderClear(base->renderer);
     cdlv_text_render(base);
 }
 

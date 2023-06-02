@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include "cdlv_macros.h"
 
 typedef enum {
     cdlv_static_scene,
@@ -57,8 +58,10 @@ typedef struct cdlv_canvas {
 typedef struct cdlv_text {
     SDL_Texture* tex;
     TTF_Font* font;
+    SDL_Rect* glyphs;
     SDL_Color color;
     SDL_Color bg;
+    char content[cdlv_max_string_size];
     size_t size;
     size_t x, y;
     size_t w, h;

@@ -18,58 +18,6 @@ void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const s
     #undef cdlv_temp_canvas
 }
 
-void cdlv_text_create(cdlv_base* base, const char* path,
-        const size_t size, const uint32_t wrap,
-        const size_t x, const size_t y,
-        const uint8_t r, const uint8_t g, const uint8_t b,
-        const uint8_t a) {
-    #define cdlv_temp_text base->text
-    cdlv_temp_text = malloc(sizeof(cdlv_text));
-    if(!cdlv_temp_text)
-        cdlv_die("Could not allocate memory for cdlv_text!");
-    cdlv_temp_text->font = NULL;
-    cdlv_temp_text->font = TTF_OpenFont(path, size);
-    if(!cdlv_temp_text->font)
-        cdlv_diev("Could not create font from file at path: "
-        "\"%s\": %s", path, SDL_GetError());
-    cdlv_temp_text->tex = NULL;
-    cdlv_temp_text->color.r = r;
-    cdlv_temp_text->color.g = g;
-    cdlv_temp_text->color.b = b;
-    cdlv_temp_text->color.a = a;
-    cdlv_temp_text->bg.r = 0;
-    cdlv_temp_text->bg.g = 0;
-    cdlv_temp_text->bg.b = 0;
-    cdlv_temp_text->bg.a = 128;
-    cdlv_temp_text->size = size;
-    cdlv_temp_text->x = x;
-    cdlv_temp_text->y = y;
-    cdlv_temp_text->w = 0;
-    cdlv_temp_text->h = 0;
-    cdlv_temp_text->wrap = wrap;
-    #undef cdlv_temp_text
-}
-
-void cdlv_text_update(cdlv_base* base, const char* content) {
-    #define cdlv_temp_text base->text
-    if(strlen(content)) {
-        SDL_Surface* temp = NULL;
-        temp = TTF_RenderUTF8_Shaded_Wrapped(cdlv_temp_text->font, content, cdlv_temp_text->color,
-                cdlv_temp_text->bg, cdlv_temp_text->wrap);
-        if(!temp) cdlv_diev("Could not render text to surface: %s", TTF_GetError());
-        // Free current texture
-        if(cdlv_temp_text->tex) SDL_DestroyTexture(cdlv_temp_text->tex);
-        cdlv_temp_text->tex = NULL;
-        cdlv_temp_text->tex = SDL_CreateTextureFromSurface(base->renderer, temp);
-        if(!cdlv_temp_text->tex) cdlv_diev("Could not convert surface to texture: %s", SDL_GetError());
-        cdlv_temp_text->w = temp->w;
-        cdlv_temp_text->h = temp->h;
-        SDL_FreeSurface(temp);
-    }
-    #undef cdlv_temp_text
-}
-
-
 static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
     cdlv_alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
     #define cdlv_imgs    scene->images
@@ -401,11 +349,4 @@ void cdlv_loop_end(cdlv_base* base) {
 
 void cdlv_start(cdlv_base* base) {
     cdlv_scene_load(base, 0, 0);
-}
-
-void cdlv_text_render(cdlv_base* base) {
-    #define cdlv_temp_text base->text
-    SDL_Rect quad = {cdlv_temp_text->x, cdlv_temp_text->y, cdlv_temp_text->w, cdlv_temp_text->h};
-    SDL_RenderCopy(base->renderer, cdlv_temp_text->tex, NULL, &quad);
-    #undef cdlv_temp_text
 }

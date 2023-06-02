@@ -10,6 +10,9 @@
 #define cdlv_max_choice_count   10
 #define cdlv_max_menu_entries   20
 
+#define cdlv_ascii_count        128
+#define cdlv_font_atlas_size    1024
+
 #define cdlv_arrow              "> "
 #define cdlv_continue           "> > >"
 

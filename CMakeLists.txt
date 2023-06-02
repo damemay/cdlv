@@ -120,6 +120,7 @@ add_executable(${PROJECT_NAME}
     src/cdlv_parse.c
     src/cdlv_main.c
     src/cdlv_menu.c
+    src/cdlv_text.c
 )
 endif()
 

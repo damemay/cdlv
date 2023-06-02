@@ -180,7 +180,7 @@ void cdlv_read_file(cdlv_base* base, const char* file) {
         cdlv_diev("Wrong data on the first line: %s", script[0]);
 
     cdlv_canvas_create(base, canvas_w, canvas_h, framerate);
-    cdlv_text_create(base, font_path, font_size, 800, 50, 400,
+    cdlv_text_create(base, font_path, font_size, 1200, 50, 400,
             255, 255, 255, 255);
 
     base->scene_count = count_scenes(script, lines);
