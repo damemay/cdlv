@@ -13,7 +13,7 @@ static inline void menu_reprint(cdlv_menu* menu) {
     }
 }
 
-cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path) {
+cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, SDL_Renderer* r) {
     cdlv_menu* menu = malloc(sizeof(cdlv_menu));
     if(!menu)
         cdlv_die("Could not allocate memory for the menu");
@@ -40,7 +40,7 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path) {
     cdlv_text_create(base,
             "../res/fonts/roboto.ttf", 16, 700,
             10, 10,
-            255, 255, 255, 255);
+            255, 255, 255, 255, r);
 
     cdlv_alloc_ptr_arr(&menu->text, cdlv_max_string_size, char);
     if(menu->path_exists) {
@@ -55,9 +55,9 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path) {
     return menu;
 }
 
-void cdlv_menu_render(cdlv_base* base) {
-    SDL_RenderClear(base->renderer);
-    cdlv_text_render(base);
+void cdlv_menu_render(cdlv_base* base, SDL_Renderer* r) {
+    SDL_RenderClear(r);
+    cdlv_text_render(base, r);
 }
 
 void cdlv_menu_clean(cdlv_menu* menu) {
@@ -69,7 +69,7 @@ void cdlv_menu_clean(cdlv_menu* menu) {
     free(menu);
 }
 
-static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu) {
+static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu, sdl_base* sdl) {
     if((*menu)->current_choice >= 0 && (*menu)->current_choice < (*menu)->file_count) {
         char* full_path;
         cdlv_alloc_ptr_arr(&full_path,
@@ -78,23 +78,23 @@ static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu) {
         sprintf(full_path, "%s/%s", (*menu)->path, (*menu)->files[(*menu)->current_choice]);
         cdlv_menu_clean((*menu));
         *menu = NULL;
-        const char* title = (*base)->title;
-        const size_t w = (*base)->w;
-        const size_t h = (*base)->h;
+        const char* title = sdl->title;
+        const size_t w = sdl->w;
+        const size_t h = sdl->h;
         cdlv_clean_all((*base));
         *base = NULL;
-        *base = cdlv_create(title, w, h);
+        *base = cdlv_create();
         (*base)->state = cdlv_main_run;
-        cdlv_read_file((*base), full_path);
+        cdlv_read_file((*base), full_path, &sdl->renderer);
         free(full_path);
         cdlv_start((*base));
     }
 }
 
-void cdlv_menu_handle_keys(cdlv_base** base, cdlv_menu** menu, SDL_Event* e) {
+void cdlv_menu_handle_keys(cdlv_base** base, cdlv_menu** menu, sdl_base* sdl) {
     if((*base)->can_interact) {
-        if(e->type == SDL_KEYUP && e->key.repeat == 0) {
-            switch(e->key.keysym.sym) {
+        if(sdl->event.type == SDL_KEYUP && sdl->event.key.repeat == 0) {
+            switch(sdl->event.key.keysym.sym) {
                 case SDLK_UP:
                     if((*menu)->current_choice > 0) {
                         --(*menu)->current_choice;
@@ -109,11 +109,11 @@ void cdlv_menu_handle_keys(cdlv_base** base, cdlv_menu** menu, SDL_Event* e) {
                         cdlv_text_update((*base), (*menu)->text);
                     }
                     break;
-                case SDLK_RETURN: menu_load_script(base, menu); break;
+                case SDLK_RETURN: menu_load_script(base, menu, sdl); break;
             }
         }
-        if(e->type == SDL_CONTROLLERBUTTONUP) {
-            switch(e->cbutton.button) {
+        if(sdl->event.type == SDL_CONTROLLERBUTTONUP) {
+            switch(sdl->event.cbutton.button) {
                 case SDL_CONTROLLER_BUTTON_DPAD_UP:
                     if((*menu)->current_choice > 0) {
                         --(*menu)->current_choice;
@@ -128,7 +128,7 @@ void cdlv_menu_handle_keys(cdlv_base** base, cdlv_menu** menu, SDL_Event* e) {
                         cdlv_text_update((*base), (*menu)->text);
                     }
                     break;
-                case SDL_CONTROLLER_BUTTON_A: menu_load_script(base, menu); break;
+                case SDL_CONTROLLER_BUTTON_A: menu_load_script(base, menu, sdl); break;
             }
         }
     }

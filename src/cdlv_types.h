@@ -77,22 +77,24 @@ typedef struct cdlv_menu {
     bool path_exists;
 } cdlv_menu;
 
-typedef struct cdlv_base {
+typedef struct sdl_base {
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_GameController** gamepads;
     SDL_Event event;
-    bool run;
-    uint64_t c_tick, l_tick;
-    float e_ticks;
-    cdlv_state state;
+    int run;
     size_t w, h;
     const char* title;
+} sdl_base;
 
+typedef struct cdlv_base {
     cdlv_canvas* canvas;
     cdlv_text* text;
     cdlv_choice* choice;
     cdlv_scene** scenes;
+    cdlv_state state;
+    uint64_t c_tick, l_tick;
+    float e_ticks;
     size_t scene_count;
     size_t c_line, c_scene, c_image;
     float accum;

@@ -168,7 +168,7 @@ static inline void copy_scene_data(cdlv_base* base, char* const* file, const siz
     #undef cdlv_temp_scene
 }
 
-void cdlv_read_file(cdlv_base* base, const char* file) {
+void cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
     size_t lines;
     char** script = read_file_in_lines(file, &lines);
     size_t canvas_w, canvas_h, framerate;
@@ -179,9 +179,9 @@ void cdlv_read_file(cdlv_base* base, const char* file) {
                 font_path, &font_size))
         cdlv_diev("Wrong data on the first line: %s", script[0]);
 
-    cdlv_canvas_create(base, canvas_w, canvas_h, framerate);
+    cdlv_canvas_create(base, canvas_w, canvas_h, framerate, r);
     cdlv_text_create(base, font_path, font_size, 1200, 50, 400,
-            255, 255, 255, 255);
+            255, 255, 255, 255, *r);
 
     base->scene_count = count_scenes(script, lines);
     scenes_alloc(base, base->scene_count);

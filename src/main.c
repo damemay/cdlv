@@ -9,30 +9,31 @@ extern unsigned int _newlib_heap_size_user = 300*1024*1024;
 #endif
 
 int main(int argc, char* argv[]) {
-    cdlv_base* base = cdlv_create(TITLE, WIDTH, HEIGHT);
+    sdl_base* sdl = sdl_create(TITLE, WIDTH, HEIGHT);
+    cdlv_base* base = cdlv_create();
     cdlv_menu* menu = NULL;
 
     #ifndef __vita__
-    menu = cdlv_menu_create(base, "/home/mar/scripts");
+    menu = cdlv_menu_create(base, "/home/mar/c/sdl_gl/cdlv/scripts", sdl->renderer);
     #else
-    menu = cdlv_menu_create(base, "ux0:/data/scripts");
+    menu = cdlv_menu_create(base, "ux0:/data/scripts", sdl->renderer);
     #endif
 
-    while(base->run) {
+    while(sdl->run) {
         switch(base->state) {
             case cdlv_main_menu:
-                while(SDL_PollEvent(&base->event) != 0) {
-                    if(base->event.type == SDL_QUIT) base->run = false;
-                    cdlv_menu_handle_keys(&base, &menu, &base->event);
+                while(SDL_PollEvent(&sdl->event) != 0) {
+                    if(sdl->event.type == SDL_QUIT) sdl->run = false;
+                    cdlv_menu_handle_keys(&base, &menu, sdl);
                 }
-                cdlv_menu_render(base);
+                cdlv_menu_render(base, sdl->renderer);
                 break;
             case cdlv_main_run:
-                cdlv_loop_start(base);
-                cdlv_render(base);
+                cdlv_loop_start(base, &sdl->event, &sdl->run);
+                cdlv_render(base, &sdl->renderer);
                 break;
         }
-        cdlv_loop_end(base);
+        cdlv_loop_end(base, &sdl->renderer);
     }
 
     cdlv_clean_all(base);

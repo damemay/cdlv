@@ -33,7 +33,7 @@ static inline void sdl_init(const char* title,
     } else sdl_g = NULL;
 }
 
-static inline void sdl_clean(SDL_Window** sdl_w, SDL_Renderer** sdl_r, SDL_GameController** sdl_g) {
+static inline void sdl_clean_(SDL_Window** sdl_w, SDL_Renderer** sdl_r, SDL_GameController** sdl_g) {
     if(sdl_g) {
         for(int i=0; i<sizeof(sdl_g); i++) SDL_GameControllerClose(sdl_g[i]);
         free(sdl_g);
@@ -42,9 +42,9 @@ static inline void sdl_clean(SDL_Window** sdl_w, SDL_Renderer** sdl_r, SDL_GameC
     if(*sdl_w) SDL_DestroyWindow(*sdl_w);
 }
 
-cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h) {
-    cdlv_base* base = NULL;
-    base = malloc(sizeof(cdlv_base));
+sdl_base* sdl_create(const char* title, const size_t w, const size_t h) {
+    sdl_base* base = NULL;
+    base = malloc(sizeof(sdl_base));
     if(!base)
         cdlv_die("Could not allocate memory for cdlv_base!");
 
@@ -52,18 +52,30 @@ cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h) {
     base->renderer      = NULL;
     base->gamepads      = NULL;
     base->run           = true;
-    base->c_tick        = SDL_GetTicks64();
-    base->l_tick        = SDL_GetTicks64();
-    base->e_ticks       = 0.0f;
     base->title         = title;
     base->w             = w;
     base->h             = h;
+
+    sdl_init(title, w, h, &base->window, &base->renderer, base->gamepads);
+    SDL_SetRenderDrawColor(base->renderer, 0, 0, 0, 255);
+
+    return base;
+}
+
+cdlv_base* cdlv_create() {
+    cdlv_base* base = NULL;
+    base = malloc(sizeof(cdlv_base));
+    if(!base)
+        cdlv_die("Could not allocate memory for cdlv_base!");
 
     base->canvas        = NULL;
     base->text          = NULL;
     base->choice        = NULL;
     base->scenes        = NULL;
     base->scene_count   = 0;
+    base->c_tick        = SDL_GetTicks64();
+    base->l_tick        = SDL_GetTicks64();
+    base->e_ticks       = 0.0f;
     base->c_line        = 0;
     base->c_scene       = 0;
     base->c_image       = 0;
@@ -71,13 +83,26 @@ cdlv_base* cdlv_create(const char* title, const size_t w, const size_t h) {
     base->can_interact  = true;
     base->state         = cdlv_main_menu;
 
-    sdl_init(title, w, h, &base->window, &base->renderer, base->gamepads);
-    SDL_SetRenderDrawColor(base->renderer, 0, 0, 0, 255);
 
     return base;
 };
 
-void cdlv_clean_all(cdlv_base* base) {
+cdlv_base* cdlv_init_from_script(const char* path, SDL_Renderer** r) {
+    cdlv_base* base = NULL;
+    base = cdlv_create();
+    base->state = cdlv_main_run;
+    cdlv_read_file(base, path, r);
+    cdlv_start(base);
+    return base;
+}
+
+void sdl_clean(sdl_base* base) {
+    if(base->window || base->renderer)
+        sdl_clean_(&base->window, &base->renderer, base->gamepads);
+    free(base);
+}
+
+void cdlv_clean_scenes(cdlv_base* base) {
     if(base->scenes) {
         for(size_t i=0; i<base->scene_count; ++i)
             if(base->scenes[i]) {
@@ -95,17 +120,26 @@ void cdlv_clean_all(cdlv_base* base) {
             }
         free(base->scenes);
     }
+}
+
+void cdlv_clean_canvas(cdlv_base* base) {
     if(base->canvas) {
         SDL_DestroyTexture(base->canvas->tex);
         if(base->canvas->raw_pixels) free(base->canvas->raw_pixels);
         free(base->canvas);
     }
+}
+
+void cdlv_clean_text(cdlv_base* base) {
     if(base->text) {
         TTF_CloseFont(base->text->font);
         if(base->text->tex) SDL_DestroyTexture(base->text->tex);
         free(base->text);
     }
-    if(base->window || base->renderer)
-        sdl_clean(&base->window, &base->renderer, base->gamepads);
-    free(base);
+}
+
+void cdlv_clean_all(cdlv_base* base) {
+    cdlv_clean_scenes(base);
+    cdlv_clean_canvas(base);
+    cdlv_clean_text(base);
 }

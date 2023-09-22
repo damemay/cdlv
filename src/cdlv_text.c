@@ -55,7 +55,7 @@ void cdlv_text_create(cdlv_base* base, const char* path,
         const size_t size, const uint32_t wrap,
         const size_t x, const size_t y,
         const uint8_t r, const uint8_t g, const uint8_t b,
-        const uint8_t a) {
+        const uint8_t a, SDL_Renderer* renderer) {
     #define cdlv_temp_text base->text
     cdlv_temp_text = malloc(sizeof(cdlv_text));
     if(!cdlv_temp_text)
@@ -77,7 +77,7 @@ void cdlv_text_create(cdlv_base* base, const char* path,
     cdlv_temp_text->w = 0;
     cdlv_temp_text->h = 0;
     cdlv_temp_text->wrap = wrap;
-    text_font_create(cdlv_temp_text, path, base->renderer);
+    text_font_create(cdlv_temp_text, path, renderer);
     #undef cdlv_temp_text
 }
 
@@ -151,8 +151,8 @@ static inline void text_draw_wrap(cdlv_text* text, SDL_Renderer* renderer) {
     text_draw_line(text, x, y, line, renderer);
 }
 
-void cdlv_text_render(cdlv_base* base) {
+void cdlv_text_render(cdlv_base* base, SDL_Renderer* r) {
     #define cdlv_temp_text base->text
-    text_draw_wrap(cdlv_temp_text, base->renderer);
+    text_draw_wrap(cdlv_temp_text, r);
     #undef cdlv_temp_text
 }

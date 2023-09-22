@@ -1,12 +1,12 @@
 #include "cdlv.h"
 
-void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps) {
+void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
     #define cdlv_temp_canvas base->canvas
     cdlv_temp_canvas = malloc(sizeof(cdlv_canvas));
     if(!cdlv_temp_canvas)
         cdlv_die("Could not allocate memory for cdlv_canvas!");
     cdlv_temp_canvas->tex = NULL;
-    cdlv_temp_canvas->tex = SDL_CreateTexture(base->renderer,
+    cdlv_temp_canvas->tex = SDL_CreateTexture(*r,
             SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
     if(!cdlv_temp_canvas->tex)
         cdlv_diev("Could not create streaming texture: %s", SDL_GetError());
@@ -291,7 +291,7 @@ static inline void cdlv_canvas_copy_buffer(cdlv_canvas* canvas, void* buff) {
     cdlv_canvas_unlock(canvas);
 }
 
-void cdlv_render(cdlv_base* base) {
+void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
     #define cdlv_temp_scene base->scenes[base->c_scene]
     #define cdlv_temp_canvas base->canvas
     #define cdlv_anim()                                     \
@@ -306,7 +306,7 @@ void cdlv_render(cdlv_base* base) {
                     cdlv_temp_scene->images[base->c_image]->pixels);  \
         }                                                   \
     }
-    SDL_RenderClear(base->renderer);
+    SDL_RenderClear(*r);
     if(cdlv_temp_scene->type == cdlv_static_scene) {
         cdlv_canvas_copy_buffer(cdlv_temp_canvas,
                 cdlv_scene_pixels(cdlv_temp_scene, base->c_image));
@@ -326,24 +326,24 @@ void cdlv_render(cdlv_base* base) {
                 cdlv_text_update(base, cdlv_continue);
         }
     }
-    SDL_RenderCopy(base->renderer, cdlv_temp_canvas->tex, NULL, NULL);
-    if(base->can_interact) cdlv_text_render(base);
+    SDL_RenderCopy(*r, cdlv_temp_canvas->tex, NULL, NULL);
+    if(base->can_interact) cdlv_text_render(base, *r);
     #undef cdlv_anim
     #undef cdlv_temp_canvas
     #undef cdlv_temp_scene
 }
 
-void cdlv_loop_start(cdlv_base* base) {
-    while(SDL_PollEvent(&base->event) != 0) {
-        if(base->event.type == SDL_QUIT) base->run = false;
-        cdlv_handle_keys(base, &base->event);
+void cdlv_loop_start(cdlv_base* base, SDL_Event* e, int* run) {
+    while(SDL_PollEvent(e) != 0) {
+        if(e->type == SDL_QUIT) *run = false;
+        cdlv_handle_keys(base, e);
     }
     base->c_tick = SDL_GetTicks64();
     base->e_ticks = (base->c_tick - base->l_tick) / 1000.0f;
 }
 
-void cdlv_loop_end(cdlv_base* base) {
-    SDL_RenderPresent(base->renderer);
+void cdlv_loop_end(cdlv_base* base, SDL_Renderer** r) {
+    SDL_RenderPresent(*r);
     base->l_tick = base->c_tick;
 }
 
