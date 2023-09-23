@@ -1,38 +1,37 @@
 #include "cdlv.h"
 
+size_t iter = 0;
+size_t count = 10000;
+
 void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
-    #define cdlv_temp_canvas base->canvas
-    cdlv_temp_canvas = malloc(sizeof(cdlv_canvas));
-    if(!cdlv_temp_canvas)
+    base->canvas = malloc(sizeof(cdlv_canvas));
+    if(!base->canvas)
         cdlv_die("Could not allocate memory for cdlv_canvas!");
-    cdlv_temp_canvas->tex = NULL;
-    cdlv_temp_canvas->tex = SDL_CreateTexture(*r,
+    base->canvas->tex = NULL;
+    base->canvas->tex = SDL_CreateTexture(*r,
             SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
-    if(!cdlv_temp_canvas->tex)
+    if(!base->canvas->tex)
         cdlv_diev("Could not create streaming texture: %s", SDL_GetError());
-    cdlv_temp_canvas->w = w;
-    cdlv_temp_canvas->h = h;
-    cdlv_temp_canvas->raw_pitch = 0;
-    cdlv_temp_canvas->raw_pixels = NULL;
-    cdlv_temp_canvas->framerate = fps;
-    #undef cdlv_temp_canvas
+    base->canvas->w = w;
+    base->canvas->h = h;
+    base->canvas->raw_pitch = 0;
+    base->canvas->raw_pixels = NULL;
+    base->canvas->framerate = fps;
 }
 
 static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
     cdlv_alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
-    #define cdlv_imgs    scene->images
-    #define cdlv_paths   scene->image_paths
     for(size_t i=0; i<scene->image_count; ++i) {
-        cdlv_imgs[i] = malloc(sizeof(SDL_Surface*));
-        if(!cdlv_imgs[i])
+        scene->images[i] = malloc(sizeof(SDL_Surface*));
+        if(!scene->images[i])
             cdlv_diev("Could not allocate memory "
-            "for image with path: %s", cdlv_paths[i]);
+            "for image with path: %s", scene->image_paths[i]);
 
         SDL_Surface* temp = NULL;
-        temp = IMG_Load(cdlv_paths[i]);
+        temp = IMG_Load(scene->image_paths[i]);
         if(!temp)
             cdlv_diev("Could not load image "
-            "with path \"%s\": %s", cdlv_paths[i], SDL_GetError());
+            "with path \"%s\": %s", scene->image_paths[i], SDL_GetError());
 
         if(temp->w < canvas->w && temp->h < canvas->h) {
             SDL_Surface* scaled = NULL;
@@ -46,19 +45,17 @@ static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
             temp = scaled;
         }
 
-        cdlv_imgs[i] = NULL;
-        cdlv_imgs[i] = SDL_ConvertSurfaceFormat(temp, SDL_PIXELFORMAT_RGBA32, 0);
-        if(!cdlv_imgs[i])
+        scene->images[i] = NULL;
+        scene->images[i] = SDL_ConvertSurfaceFormat(temp, SDL_PIXELFORMAT_RGBA32, 0);
+        if(!scene->images[i])
             cdlv_diev("Could not convert surfaces "
             "when handling image with path "
-            "\"%s\": %s", cdlv_paths[i], SDL_GetError());
-        if(SDL_SetSurfaceBlendMode(cdlv_imgs[i], SDL_BLENDMODE_BLEND) < 0)
+            "\"%s\": %s", scene->image_paths[i], SDL_GetError());
+        if(SDL_SetSurfaceBlendMode(scene->images[i], SDL_BLENDMODE_BLEND) < 0)
             cdlv_diev("Could not set alpha blending on image with path \"%s\": %s",
-                cdlv_paths[i], SDL_GetError());
+                scene->image_paths[i], SDL_GetError());
         free(temp);
     }
-    #undef cdlv_temp_paths
-    #undef cdlv_temp_imgs
 }
 
 static inline void cdlv_scene_clean(cdlv_scene* scene) {
@@ -70,6 +67,7 @@ static inline void cdlv_scene_clean(cdlv_scene* scene) {
 
 static inline void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
     if(index < base->scene_count) {
+        iter = 0;
         base->c_scene = index;
         base->c_image = 0;
         base->c_line  = 0;
@@ -96,63 +94,55 @@ static inline bool cdlv_change_image(cdlv_base* base, cdlv_scene* scene, const c
 }
 
 static inline void cdlv_choice_create(cdlv_base* base) {
-    #define cdlv_temp_choice base->choice
-    cdlv_temp_choice = malloc(sizeof(cdlv_choice));
-    if(!cdlv_temp_choice)
+    base->choice = malloc(sizeof(cdlv_choice));
+    if(!base->choice)
         cdlv_die("Could not allocate memory for a new scripted choice!");
 
-    cdlv_temp_choice->count               = 0;
-    cdlv_temp_choice->current             = 0;
-    cdlv_temp_choice->state               = cdlv_parsing;
-    cdlv_temp_choice->destinations        = NULL;
-    cdlv_temp_choice->options             = NULL;
-    cdlv_temp_choice->prompt              = NULL;
-    cdlv_alloc_ptr_arr(&cdlv_temp_choice->destinations, cdlv_max_choice_count, size_t);
-    cdlv_alloc_ptr_arr(&cdlv_temp_choice->options, cdlv_max_choice_count, char*);
-    cdlv_alloc_ptr_arr(&cdlv_temp_choice->prompt, cdlv_max_string_size, char);
-    #undef cdlv_temp_choice
+    base->choice->count               = 0;
+    base->choice->current             = 0;
+    base->choice->state               = cdlv_parsing;
+    base->choice->destinations        = NULL;
+    base->choice->options             = NULL;
+    base->choice->prompt              = NULL;
+    cdlv_alloc_ptr_arr(&base->choice->destinations, cdlv_max_choice_count, size_t);
+    cdlv_alloc_ptr_arr(&base->choice->options, cdlv_max_choice_count, char*);
+    cdlv_alloc_ptr_arr(&base->choice->prompt, cdlv_max_string_size, char);
 }
 
 static inline void cdlv_choice_clean(cdlv_base* base) {
-    #define cdlv_temp_choice base->choice
     for(size_t i=0;i<cdlv_max_choice_count; ++i)
-        if(cdlv_temp_choice->options[i]) free(cdlv_temp_choice->options[i]);
-    free(cdlv_temp_choice->options);
-    free(cdlv_temp_choice->prompt);
-    free(cdlv_temp_choice->destinations);
-    free(cdlv_temp_choice);
-    cdlv_temp_choice = NULL;
-    #undef cdlv_temp_choice
+        if(base->choice->options[i]) free(base->choice->options[i]);
+    free(base->choice->options);
+    free(base->choice->prompt);
+    free(base->choice->destinations);
+    free(base->choice);
+    base->choice = NULL;
 }
 
 static inline void cdlv_choice_add(cdlv_base* base, const char* line) {
-    #define cdlv_temp_choice base->choice
     const char chars[12] = "1234567890 ";
     size_t d = 0;
     size_t s = 0;
     if((sscanf(line, "%lu", &d)) != 0)
         if(d < base->scene_count)
             s = strspn(line, chars);
-    if(s>0 && cdlv_temp_choice->count < cdlv_max_choice_count) {
-        cdlv_temp_choice->destinations[cdlv_temp_choice->count] = d;
-        cdlv_duplicate_string(&cdlv_temp_choice->options[cdlv_temp_choice->count], line+s, strlen(line+s)+1);
-        ++cdlv_temp_choice->count;
+    if(s>0 && base->choice->count < cdlv_max_choice_count) {
+        base->choice->destinations[base->choice->count] = d;
+        cdlv_duplicate_string(&base->choice->options[base->choice->count], line+s, strlen(line+s)+1);
+        ++base->choice->count;
     }
-    #undef cdlv_temp_choice
 }
 
 static inline void choice_update_prompt(cdlv_base* base) {
-    #define cdlv_temp_choice base->choice
-    if(cdlv_temp_choice->current < cdlv_temp_choice->count) {
-        sprintf(cdlv_temp_choice->prompt, cdlv_arrow);
-        for(size_t i=cdlv_temp_choice->current; i<cdlv_temp_choice->count; ++i) {
-            strcat(cdlv_temp_choice->prompt, cdlv_temp_choice->options[i]);
-            strcat(cdlv_temp_choice->prompt, "\n");
+    if(base->choice->current < base->choice->count) {
+        sprintf(base->choice->prompt, cdlv_arrow);
+        for(size_t i=base->choice->current; i<base->choice->count; ++i) {
+            strcat(base->choice->prompt, base->choice->options[i]);
+            strcat(base->choice->prompt, "\n");
         }
         //strcat(choice->prompt, " ");
     }
-    cdlv_text_update(base, cdlv_temp_choice->prompt);
-    #undef cdlv_temp_choice
+    cdlv_text_update(base, base->choice->prompt);
 }
 
 static inline void cdlv_goto(cdlv_base* base, const char* line) {
@@ -205,13 +195,11 @@ static inline void cdlv_update(cdlv_base* base) {
 }
 
 static inline bool cdlv_choice_switch(cdlv_base* base, size_t ch) {
-    #define cdlv_temp_choice base->choice
-    if(cdlv_temp_choice->destinations[ch]) {
-        cdlv_scene_load(base, base->c_scene, cdlv_temp_choice->destinations[ch]);
+    if(base->choice->destinations[ch]) {
+        cdlv_scene_load(base, base->c_scene, base->choice->destinations[ch]);
         return true;
     }
     return false;
-    #undef cdlv_temp_choice
 }
 
 static inline void cdlv_choice_handler(cdlv_base* base, size_t ch) {
@@ -221,7 +209,7 @@ static inline void cdlv_choice_handler(cdlv_base* base, size_t ch) {
 void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
     if(base->can_interact && !base->choice) {
         if(e->type == SDL_KEYUP && e->key.repeat == 0) switch(e->key.keysym.sym) {
-                case SDLK_RETURN: cdlv_update(base); break;
+                case SDLK_RETURN: cdlv_update(base); iter = 0; break;
         }
         if(e->type == SDL_CONTROLLERBUTTONUP) switch(e->cbutton.button) {
                 case SDL_CONTROLLER_BUTTON_A: cdlv_update(base); break;
@@ -291,24 +279,36 @@ static inline void cdlv_canvas_copy_buffer(cdlv_canvas* canvas, void* buff) {
     cdlv_canvas_unlock(canvas);
 }
 
+static inline void cdlv_canvas_dissolve_buffer(cdlv_canvas* canvas, void* buff) {
+    cdlv_canvas_lock(canvas);
+    if(canvas->raw_pixels) {
+        if(iter<canvas->raw_pitch*canvas->h) {
+            for(size_t i=0; i<count; ++i)
+                if(((uint8_t*)canvas->raw_pixels)[iter+i] != ((uint8_t*)buff)[iter+i])
+                    ((uint8_t*)canvas->raw_pixels)[iter+i]=((uint8_t*)buff)[iter+i];
+            iter += count;
+        } 
+    }
+    cdlv_canvas_unlock(canvas);
+}
+
 void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
     #define cdlv_temp_scene base->scenes[base->c_scene]
-    #define cdlv_temp_canvas base->canvas
     #define cdlv_anim()                                     \
-    base->accum += base->e_ticks * cdlv_temp_canvas->framerate;       \
+    base->accum += base->e_ticks * base->canvas->framerate;       \
     if(base->accum > 1) {                                   \
         size_t n_frame = base->c_image + 1;                 \
         n_frame %= cdlv_temp_scene->image_count;                      \
         if(n_frame < cdlv_temp_scene->image_count) {                  \
             base->c_image = n_frame;                        \
             base->accum = 0;                                \
-            cdlv_canvas_copy_buffer(cdlv_temp_canvas,                 \
+            cdlv_canvas_copy_buffer(base->canvas,                 \
                     cdlv_temp_scene->images[base->c_image]->pixels);  \
         }                                                   \
     }
     SDL_RenderClear(*r);
     if(cdlv_temp_scene->type == cdlv_static_scene) {
-        cdlv_canvas_copy_buffer(cdlv_temp_canvas,
+        cdlv_canvas_dissolve_buffer(base->canvas,
                 cdlv_scene_pixels(cdlv_temp_scene, base->c_image));
     } else if(cdlv_temp_scene->type == cdlv_anim_scene) {
         cdlv_anim();
@@ -326,10 +326,9 @@ void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
                 cdlv_text_update(base, cdlv_continue);
         }
     }
-    SDL_RenderCopy(*r, cdlv_temp_canvas->tex, NULL, NULL);
+    SDL_RenderCopy(*r, base->canvas->tex, NULL, NULL);
     if(base->can_interact) cdlv_text_render(base, *r);
     #undef cdlv_anim
-    #undef cdlv_temp_canvas
     #undef cdlv_temp_scene
 }
 
