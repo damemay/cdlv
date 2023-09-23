@@ -1,4 +1,4 @@
-#include "cdlv.h"
+#include "../cdlv.h"
 #include "cdlv_menu.h"
 
 #define WIDTH  960

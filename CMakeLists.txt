@@ -105,16 +105,16 @@ else()
     endif()
     
     add_library(${PROJECT_NAME} STATIC
-        src/cdlv_base.c
-        src/cdlv_parse.c
-        src/cdlv_main.c
-        src/cdlv_text.c
+        cdlv_base.c
+        cdlv_parse.c
+        cdlv_main.c
+        cdlv_text.c
     )
 
     set(EXEC_NAME cdlv-menu)
     add_executable(${EXEC_NAME}
-        src/main.c
-        src/cdlv_menu.c
+        menu/main.c
+        menu/cdlv_menu.c
     )
     
     include_directories(${EXEC_NAME}

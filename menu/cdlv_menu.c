@@ -1,4 +1,4 @@
-#include "cdlv.h"
+#include "../cdlv.h"
 #include "cdlv_menu.h"
 #include <dirent.h>
 

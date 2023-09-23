@@ -2,7 +2,7 @@
 #define CDLV_MENU_H
 
 #include <SDL2/SDL.h>
-#include "cdlv_types.h"
+#include "../cdlv_types.h"
 
 typedef struct cdlv_menu {
     char* path;
