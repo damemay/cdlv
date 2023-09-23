@@ -108,9 +108,12 @@ void cdlv_clean_scenes(cdlv_base* base) {
         for(size_t i=0; i<base->scene_count; ++i)
             if(base->scenes[i]) {
                 if(base->scenes[i]->image_paths) {
-                    for(size_t j=0; j<base->scenes[i]->image_count; ++j)
+                    for(size_t j=0; j<base->scenes[i]->image_count; ++j) {
                         if(base->scenes[i]->image_paths[j]) free(base->scenes[i]->image_paths[j]);
+                        if(base->scenes[i]->images) if(base->scenes[i]->images[j]) free(base->scenes[i]->images[j]);
+                    }
                     free(base->scenes[i]->image_paths);
+                    if(base->scenes[i]->images) free(base->scenes[i]->images);
                 }
                 if(base->scenes[i]->script) {
                     for(size_t j=0; j<base->scenes[i]->line_count; ++j)
@@ -135,6 +138,7 @@ void cdlv_clean_text(cdlv_base* base) {
     if(base->text) {
         TTF_CloseFont(base->text->font);
         if(base->text->tex) SDL_DestroyTexture(base->text->tex);
+        if(base->text->glyphs) free(base->text->glyphs);
         free(base->text);
     }
 }
@@ -143,4 +147,5 @@ void cdlv_clean_all(cdlv_base* base) {
     cdlv_clean_scenes(base);
     cdlv_clean_canvas(base);
     cdlv_clean_text(base);
+    free(base);
 }

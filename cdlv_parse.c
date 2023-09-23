@@ -31,18 +31,25 @@ static inline char** read_file_in_lines(const char* path, size_t* line_count) {
     char** code = malloc(size+1);
     if(!code)
         fclose(file), cdlv_diev("Could not allocate memory for file: %s", path);
+    
+    char* temp = malloc(size+1);
+    if(!temp)
+        fclose(file), cdlv_diev("Could not allocate memory for file: %s", path);
 
-    char line[1024];
+    if(fread(temp, size, 1, file) != 1)
+        fclose(file), free(temp), cdlv_diev("Could not read file: %s", path);
+    temp[size] = '\0';
+
+    char* line = strtok(temp, "\r\n");
     size_t i = 0;
-    while(fgets(line, sizeof(line), file) != NULL) {
-        char* n;
-        if((n = strstr(line, "\r\n")) != NULL)
-            line[n-line] = '\0';
-        cdlv_duplicate_string(&code[i], line, sizeof(line));
+    while(line) {
+        cdlv_duplicate_string(&code[i], line, strlen(line)+1);
         ++i;
+        line = strtok(NULL, "\r\n");
     }
 
     if(feof(file)) fclose(file);
+    free(temp);
 
     *line_count = i;
     return code;

@@ -47,5 +47,6 @@ int main(int argc, char* argv[]) {
     }
 
     cdlv_clean_all(base);
+    sdl_clean(sdl);
     return EXIT_SUCCESS;
 }
