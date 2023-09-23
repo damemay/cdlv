@@ -54,13 +54,19 @@ int main() {
     // SDL initialization can be done with provided wrapper or preferred way.
     sdl_base* sdl = sdl_create("sample", 640, 480);
 
+    // cdlv_config currently only allows you to set values for displayed text.
+    cdlv_config config = {
+        .text_wrap = 1200,
+        .text_x = 100,
+        .text_y = 100,
+        .text_color_r = 255,
+        .text_color_g = 255,
+        .text_color_b = 255,
+        .text_color_a = 255
+    };
+
     // cdlv_init_from_script easily sets up cdlv structures for instant use.
-    // It's equivalent to the lines below.
-    //
-    // cdlv_base* base = cdlv_create();
-    // cdlv_read_file(base, "res/example.adv", &sdl->renderer);
-    // cdlv_start(base);
-    cdlv_base* base = cdlv_init_from_script("res/example.adv", &sdl->renderer);
+    cdlv_base* base = cdlv_init_from_script(&config, "res/example.adv", &sdl->renderer);
 
     while(sdl->run) {
         cdlv_loop_start(base, &sdl->event, &sdl->run);

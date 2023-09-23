@@ -1,4 +1,5 @@
 #include "cdlv.h"
+#include "cdlv_menu.h"
 #include <dirent.h>
 
 static inline void menu_reprint(cdlv_menu* menu) {
@@ -81,9 +82,10 @@ static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu, sdl_base
         const char* title = sdl->title;
         const size_t w = sdl->w;
         const size_t h = sdl->h;
+        cdlv_config* config = (*base)->config;
         cdlv_clean_all((*base));
         *base = NULL;
-        *base = cdlv_create();
+        *base = cdlv_create(config);
         (*base)->state = cdlv_main_run;
         cdlv_read_file((*base), full_path, &sdl->renderer);
         free(full_path);

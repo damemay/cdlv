@@ -62,12 +62,13 @@ sdl_base* sdl_create(const char* title, const size_t w, const size_t h) {
     return base;
 }
 
-cdlv_base* cdlv_create() {
+cdlv_base* cdlv_create(cdlv_config* config) {
     cdlv_base* base = NULL;
     base = malloc(sizeof(cdlv_base));
     if(!base)
         cdlv_die("Could not allocate memory for cdlv_base!");
 
+    base->config        = config;
     base->canvas        = NULL;
     base->text          = NULL;
     base->choice        = NULL;
@@ -87,9 +88,9 @@ cdlv_base* cdlv_create() {
     return base;
 };
 
-cdlv_base* cdlv_init_from_script(const char* path, SDL_Renderer** r) {
+cdlv_base* cdlv_init_from_script(cdlv_config* config, const char* path, SDL_Renderer** r) {
     cdlv_base* base = NULL;
-    base = cdlv_create();
+    base = cdlv_create(config);
     base->state = cdlv_main_run;
     cdlv_read_file(base, path, r);
     cdlv_start(base);

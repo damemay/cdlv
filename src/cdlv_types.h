@@ -68,17 +68,18 @@ typedef struct cdlv_text {
     uint32_t wrap;
 } cdlv_text;
 
-typedef struct sdl_base {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_GameController** gamepads;
-    SDL_Event event;
-    int run;
-    size_t w, h;
-    const char* title;
-} sdl_base;
+typedef struct cdlv_config {
+    uint32_t text_wrap;
+    size_t text_x;
+    size_t text_y;
+    size_t text_color_r;
+    size_t text_color_g;
+    size_t text_color_b;
+    size_t text_color_a;
+} cdlv_config;
 
 typedef struct cdlv_base {
+    cdlv_config* config;
     cdlv_canvas* canvas;
     cdlv_text* text;
     cdlv_choice* choice;
@@ -91,5 +92,15 @@ typedef struct cdlv_base {
     float accum;
     bool can_interact;
 } cdlv_base;
+
+typedef struct sdl_base {
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_GameController** gamepads;
+    SDL_Event event;
+    int run;
+    size_t w, h;
+    const char* title;
+} sdl_base;
 
 #endif

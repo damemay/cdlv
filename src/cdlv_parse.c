@@ -36,7 +36,7 @@ static inline char** read_file_in_lines(const char* path, size_t* line_count) {
     size_t i = 0;
     while(fgets(line, sizeof(line), file) != NULL) {
         char* n;
-        if((n = strchr(line, '\n')) != NULL)
+        if((n = strstr(line, "\r\n")) != NULL)
             line[n-line] = '\0';
         cdlv_duplicate_string(&code[i], line, sizeof(line));
         ++i;
@@ -180,8 +180,12 @@ void cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
         cdlv_diev("Wrong data on the first line: %s", script[0]);
 
     cdlv_canvas_create(base, canvas_w, canvas_h, framerate, r);
-    cdlv_text_create(base, font_path, font_size, 1200, 50, 400,
-            255, 255, 255, 255, *r);
+    cdlv_text_create(base, font_path, font_size,
+            base->config->text_wrap,
+            base->config->text_x, base->config->text_y,
+            base->config->text_color_r, base->config->text_color_g,
+            base->config->text_color_b, base->config->text_color_a,
+            *r);
 
     base->scene_count = count_scenes(script, lines);
     scenes_alloc(base, base->scene_count);

@@ -15,7 +15,7 @@
 sdl_base* sdl_create(const char* title, const size_t w, const size_t h);
 void sdl_clean(sdl_base* base);
 
-cdlv_base* cdlv_create();
+cdlv_base* cdlv_create(cdlv_config* config);
 void cdlv_clean_scenes(cdlv_base* base);
 void cdlv_clean_canvas(cdlv_base* base);
 void cdlv_clean_text(cdlv_base* base);
@@ -30,7 +30,7 @@ void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const s
 
 void cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r);
 void cdlv_start(cdlv_base* base);
-cdlv_base* cdlv_init_from_script(const char* path, SDL_Renderer** r);
+cdlv_base* cdlv_init_from_script(cdlv_config* config, const char* path, SDL_Renderer** r);
 
 void cdlv_text_create(cdlv_base* base, const char* path, const size_t size, const uint32_t wrap, const size_t x, const size_t y, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a, SDL_Renderer* renderer);
 void cdlv_text_render(cdlv_base* base, SDL_Renderer* r);
