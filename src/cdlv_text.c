@@ -56,43 +56,39 @@ void cdlv_text_create(cdlv_base* base, const char* path,
         const size_t x, const size_t y,
         const uint8_t r, const uint8_t g, const uint8_t b,
         const uint8_t a, SDL_Renderer* renderer) {
-    #define cdlv_temp_text base->text
-    cdlv_temp_text = malloc(sizeof(cdlv_text));
-    if(!cdlv_temp_text)
+    base->text = malloc(sizeof(cdlv_text));
+    if(!base->text)
         cdlv_die("Could not allocate memory for cdlv_text!");
-    cdlv_temp_text->font = NULL;
-    cdlv_temp_text->glyphs = NULL;
-    cdlv_temp_text->tex = NULL;
-    cdlv_temp_text->color.r = r;
-    cdlv_temp_text->color.g = g;
-    cdlv_temp_text->color.b = b;
-    cdlv_temp_text->color.a = a;
-    cdlv_temp_text->bg.r = 0;
-    cdlv_temp_text->bg.g = 0;
-    cdlv_temp_text->bg.b = 0;
-    cdlv_temp_text->bg.a = 128;
-    cdlv_temp_text->size = size;
-    cdlv_temp_text->x = x;
-    cdlv_temp_text->y = y;
-    cdlv_temp_text->w = 0;
-    cdlv_temp_text->h = 0;
-    cdlv_temp_text->wrap = wrap;
-    text_font_create(cdlv_temp_text, path, renderer);
-    #undef cdlv_temp_text
+    base->text->font = NULL;
+    base->text->glyphs = NULL;
+    base->text->tex = NULL;
+    base->text->color.r = r;
+    base->text->color.g = g;
+    base->text->color.b = b;
+    base->text->color.a = a;
+    base->text->bg.r = 0;
+    base->text->bg.g = 0;
+    base->text->bg.b = 0;
+    base->text->bg.a = 128;
+    base->text->size = size;
+    base->text->x = x;
+    base->text->y = y;
+    base->text->w = 0;
+    base->text->h = 0;
+    base->text->wrap = wrap;
+    text_font_create(base->text, path, renderer);
 }
 
 void cdlv_text_update(cdlv_base* base, const char* content) {
-    #define cdlv_temp_text base->text
     size_t len = strlen(content);
     if(len) {
         if(len>cdlv_max_string_size)
-            strncpy(cdlv_temp_text->content, content, cdlv_max_string_size);
+            strncpy(base->text->content, content, cdlv_max_string_size);
         else {
-            memset(cdlv_temp_text->content, 0, cdlv_max_string_size);
-            strcpy(cdlv_temp_text->content, content);
+            memset(base->text->content, 0, cdlv_max_string_size);
+            strcpy(base->text->content, content);
         }
     }
-    #undef cdlv_temp_text
 }
 
 static inline void text_draw_line(cdlv_text* text, size_t x, size_t y, const char* line, SDL_Renderer* renderer) {
@@ -152,7 +148,5 @@ static inline void text_draw_wrap(cdlv_text* text, SDL_Renderer* renderer) {
 }
 
 void cdlv_text_render(cdlv_base* base, SDL_Renderer* r) {
-    #define cdlv_temp_text base->text
-    text_draw_wrap(cdlv_temp_text, r);
-    #undef cdlv_temp_text
+    text_draw_wrap(base->text, r);
 }

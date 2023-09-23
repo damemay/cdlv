@@ -68,15 +68,6 @@ typedef struct cdlv_text {
     uint32_t wrap;
 } cdlv_text;
 
-typedef struct cdlv_menu {
-    char* path;
-    char** files;
-    char* text;
-    size_t file_count;
-    size_t current_choice;
-    bool path_exists;
-} cdlv_menu;
-
 typedef struct sdl_base {
     SDL_Window* window;
     SDL_Renderer* renderer;
