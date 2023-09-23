@@ -1,4 +1,5 @@
 #include "cdlv.h"
+#include "cdlv_menu.h"
 
 #define WIDTH  960
 #define HEIGHT 544
@@ -14,7 +15,7 @@ int main(int argc, char* argv[]) {
     cdlv_menu* menu = NULL;
 
     #ifndef __vita__
-    menu = cdlv_menu_create(base, "/home/mar/c/sdl_gl/cdlv/scripts", sdl->renderer);
+    menu = cdlv_menu_create(base, "/home/mar/c/sdl_gl/cdlv/scripts", sdl);
     #else
     menu = cdlv_menu_create(base, "ux0:/data/scripts", sdl->renderer);
     #endif
@@ -26,7 +27,7 @@ int main(int argc, char* argv[]) {
                     if(sdl->event.type == SDL_QUIT) sdl->run = false;
                     cdlv_menu_handle_keys(&base, &menu, sdl);
                 }
-                cdlv_menu_render(base, sdl->renderer);
+                cdlv_menu_render(base, sdl);
                 break;
             case cdlv_main_run:
                 cdlv_loop_start(base, &sdl->event, &sdl->run);

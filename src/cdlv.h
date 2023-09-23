@@ -36,9 +36,4 @@ void cdlv_text_create(cdlv_base* base, const char* path, const size_t size, cons
 void cdlv_text_render(cdlv_base* base, SDL_Renderer* r);
 void cdlv_text_update(cdlv_base* base, const char* content);
 
-cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, SDL_Renderer* r);
-void cdlv_menu_render(cdlv_base* base, SDL_Renderer* r);
-void cdlv_menu_handle_keys(cdlv_base** base, cdlv_menu** menu, sdl_base* sdl);
-void cdlv_menu_clean(cdlv_menu* menu);
-
 #endif

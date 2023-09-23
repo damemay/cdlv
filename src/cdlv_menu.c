@@ -13,7 +13,7 @@ static inline void menu_reprint(cdlv_menu* menu) {
     }
 }
 
-cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, SDL_Renderer* r) {
+cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, sdl_base* sdl) {
     cdlv_menu* menu = malloc(sizeof(cdlv_menu));
     if(!menu)
         cdlv_die("Could not allocate memory for the menu");
@@ -40,7 +40,7 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, SDL_Renderer* r) 
     cdlv_text_create(base,
             "../res/fonts/roboto.ttf", 16, 700,
             10, 10,
-            255, 255, 255, 255, r);
+            255, 255, 255, 255, sdl->renderer);
 
     cdlv_alloc_ptr_arr(&menu->text, cdlv_max_string_size, char);
     if(menu->path_exists) {
@@ -55,9 +55,9 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, SDL_Renderer* r) 
     return menu;
 }
 
-void cdlv_menu_render(cdlv_base* base, SDL_Renderer* r) {
-    SDL_RenderClear(r);
-    cdlv_text_render(base, r);
+void cdlv_menu_render(cdlv_base* base, sdl_base* sdl) {
+    SDL_RenderClear(sdl->renderer);
+    cdlv_text_render(base, sdl->renderer);
 }
 
 void cdlv_menu_clean(cdlv_menu* menu) {
