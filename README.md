@@ -12,17 +12,17 @@ The goal is to create as lowest resource usage engine as possible. This is why t
   - have single loop animation;
   - prompt to jump to another scene based on player choice or scripted behavior.
 
-## Example usage
+## Example
   
 ##### example.adv
 ```
-2 640 480 3 res/esteban.ttf 32
+640 480 3 res/esteban.ttf 32
 
 !scene
   !bg
     res/cloudy_sky.png
     res/black.png
-  !scene
+  !script
     "I don't like rainy days. I hope it will get sunnier soon."
     @image 1
     Later that day...
@@ -43,7 +43,7 @@ The goal is to create as lowest resource usage engine as possible. This is why t
 !scene
   !bg
     res/sunny_sky.png
-  !scene
+  !script
     "Ah, it's the sun!"
 ```
 ##### main.c
