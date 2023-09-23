@@ -1,10 +1,10 @@
 #ifndef CDLV_MACROS_H
 #define CDLV_MACROS_H
 
-#define cdlv_diev(msg, ...) printf("[DIE] " msg "\n", __VA_ARGS__), exit(EXIT_FAILURE)
-#define cdlv_die(msg) printf("[DIE] " msg "\n")
-#define cdlv_logv(msg, ...) printf("[LOG] " msg "\n", __VA_ARGS__)
-#define cdlv_log(msg) printf("[LOG] " msg "\n")
+#define cdlv_diev(msg, ...) printf("cdlv: " msg "\n", __VA_ARGS__), exit(EXIT_FAILURE)
+#define cdlv_die(msg) printf("cdlv: " msg "\n")
+#define cdlv_logv(msg, ...) printf("cdlv: " msg "\n", __VA_ARGS__)
+#define cdlv_log(msg) printf("cdlv: " msg "\n")
 
 #define cdlv_max_string_size    5120
 #define cdlv_max_choice_count   10
@@ -14,7 +14,7 @@
 #define cdlv_font_atlas_size    1024
 
 #define cdlv_arrow              "> "
-#define cdlv_continue           "> > >"
+#define cdlv_continue           ". . ."
 
 #define cdlv_tag_scene          "!scene"
 #define cdlv_tag_bg             "!bg"
