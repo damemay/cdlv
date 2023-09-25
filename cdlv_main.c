@@ -1,10 +1,5 @@
 #include "cdlv.h"
 
-size_t iter = 0;
-size_t count = 10000;
-
-bool changing = false;
-
 void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
     base->canvas = malloc(sizeof(cdlv_canvas));
     if(!base->canvas)
@@ -19,16 +14,14 @@ void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const s
     base->canvas->raw_pitch = 0;
     base->canvas->raw_pixels = NULL;
     base->canvas->framerate = fps;
+    base->canvas->iter = 0;
+    if(base->config->dissolve) base->canvas->changing = true;
+    else base->canvas->changing = false;
 }
 
 static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
     cdlv_alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
     for(size_t i=0; i<scene->image_count; ++i) {
-        scene->images[i] = malloc(sizeof(SDL_Surface*));
-        if(!scene->images[i])
-            cdlv_diev("Could not allocate memory "
-            "for image with path: %s", scene->image_paths[i]);
-
         SDL_Surface* temp = NULL;
         temp = IMG_Load(scene->image_paths[i]);
         if(!temp)
@@ -67,9 +60,16 @@ static inline void cdlv_scene_clean(cdlv_scene* scene) {
     scene->images = NULL;
 }
 
+static inline void cdlv_scene_clean_leave_last(cdlv_scene* scene) {
+    for(size_t i=0; i<scene->image_count-1; ++i)
+        SDL_FreeSurface(scene->images[i]);
+}
+
 static inline void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
     if(index < base->scene_count) {
-        iter = 0;
+        base->canvas->iter = 0;
+        if(base->config->dissolve) base->canvas->changing = true;
+        else base->canvas->changing = false;
         base->c_scene = index;
         base->c_image = 0;
         base->c_line  = 0;
@@ -79,8 +79,9 @@ static inline void cdlv_scene_load(cdlv_base* base, const size_t prev, const siz
             base->can_interact = true;
         } else base->can_interact = false;
         if(base->c_scene) {
-            cdlv_scene_clean(base->scenes[prev]);
-            // base->scenes[prev] = NULL;
+            if(base->config->dissolve) 
+                cdlv_scene_clean_leave_last(base->scenes[prev]);
+            else cdlv_scene_clean(base->scenes[prev]);
         }
     }
 }
@@ -174,7 +175,9 @@ static inline void cdlv_update(cdlv_base* base) {
                 // @ is now a function determinator, we need to check what it actually does
                 if(strstr(cdlv_temp_line, cdlv_tag_func_image)) {
                     if(cdlv_change_image(base, cdlv_temp_scene, cdlv_temp_line)) {
-                        changing = true;
+                        base->canvas->iter = 0;
+                        if(base->config->dissolve) base->canvas->changing = true;
+                        else base->canvas->changing = false;
                         cdlv_update(base);
                     }
                 } else if(strstr(cdlv_temp_line, cdlv_tag_func_choice)) {
@@ -213,7 +216,7 @@ static inline void cdlv_choice_handler(cdlv_base* base, size_t ch) {
 void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
     if(base->can_interact && !base->choice) {
         if(e->type == SDL_KEYUP && e->key.repeat == 0) switch(e->key.keysym.sym) {
-                case SDLK_RETURN: cdlv_update(base); iter = 0; break;
+                case SDLK_RETURN: cdlv_update(base); break;
         }
         if(e->type == SDL_CONTROLLERBUTTONUP) switch(e->cbutton.button) {
                 case SDL_CONTROLLER_BUTTON_A: cdlv_update(base); break;
@@ -289,20 +292,58 @@ static inline uint8_t lerp(uint8_t a, uint8_t b, size_t t) {
     return res;
 }
 
-static inline void dissolve(cdlv_base* base) {
+static inline uint32_t* get_pixel_row(void* pixels, int pitch, size_t y) {
+    return (uint32_t*)((uint8_t*)pixels + pitch * y);
+}
+
+static inline void dissolve_iter(cdlv_base* base) {
+    base->accum += base->e_ticks * 60.0f;
+    if(base->accum > 1) {
+        if(base->canvas->iter<256)
+            base->canvas->iter+=base->config->dissolve_speed;
+        else base->canvas->changing=false;
+    }
+}
+
+static inline void dissolve_black(cdlv_base* base) {
     if(base->canvas->raw_pixels) {
         for(size_t y=0; y < base->canvas->h; y++) {
-            uint32_t* can = (uint32_t*)(
-                    (uint8_t*)base->canvas->raw_pixels +
-                    base->canvas->raw_pitch * y);
-            uint32_t* cur = (uint32_t*)(
-                    (uint8_t*)
-                    base->scenes[base->c_scene]->images[base->c_image]->pixels + 
-                    base->scenes[base->c_scene]->images[base->c_image]->pitch * y);
-            uint32_t* prv = (uint32_t*)(
-                    (uint8_t*)
-                    base->scenes[base->c_scene]->images[base->c_image-1]->pixels +
-                    base->scenes[base->c_scene]->images[base->c_image-1]->pitch * y);
+            uint32_t* can = get_pixel_row(
+                    base->canvas->raw_pixels, 
+                    base->canvas->raw_pitch, y);
+            uint32_t* cur = get_pixel_row(
+                    base->scenes[base->c_scene]->images[base->c_image]->pixels, 
+                    base->scenes[base->c_scene]->images[base->c_image]->pitch, y);
+            for(size_t x=0; x < base->canvas->w; x++) {
+                uint8_t rc, gc, bc, ac;
+                SDL_GetRGBA(*cur,
+                        base->scenes[base->c_scene]->images[base->c_image]->format,
+                        &rc,&gc,&bc,&ac);
+                *can = SDL_MapRGBA(
+                        base->scenes[base->c_scene]->images[base->c_image]->format,
+                        lerp(0, rc, base->canvas->iter),
+                        lerp(0, gc, base->canvas->iter),
+                        lerp(0, bc, base->canvas->iter),
+                        lerp(0, ac, base->canvas->iter));
+                can++;
+                cur++;
+            }
+        } dissolve_iter(base);
+    }
+}
+
+static inline void dissolve_images(cdlv_base* base) {
+    if(base->canvas->raw_pixels) {
+        for(size_t y=0; y < base->canvas->h; y++) {
+            uint32_t* can = get_pixel_row(
+                    base->canvas->raw_pixels, 
+                    base->canvas->raw_pitch, y);
+            uint32_t* cur = get_pixel_row(
+                    base->scenes[base->c_scene]->images[base->c_image]->pixels, 
+                    base->scenes[base->c_scene]->images[base->c_image]->pitch, y);
+            uint32_t* prv = get_pixel_row(
+                    base->scenes[base->c_scene]->images[base->c_image-1]->pixels, 
+                    base->scenes[base->c_scene]->images[base->c_image-1]->pitch, y);
             for(size_t x=0; x < base->canvas->w; x++) {
                 uint8_t r, g, b, a,
                         rc, gc, bc, ac;
@@ -312,23 +353,64 @@ static inline void dissolve(cdlv_base* base) {
                 SDL_GetRGBA(*cur,
                         base->scenes[base->c_scene]->images[base->c_image]->format,
                         &rc,&gc,&bc,&ac);
-                uint8_t rl = lerp(r, rc, iter);
-                uint8_t gl = lerp(g, gc, iter);
-                uint8_t bl = lerp(b, bc, iter);
-                uint8_t al = lerp(a, ac, iter);
                 *can = SDL_MapRGBA(
                         base->scenes[base->c_scene]->images[base->c_image]->format,
-                        rl, gl, bl, al);
+                        lerp(r, rc, base->canvas->iter),
+                        lerp(g, gc, base->canvas->iter),
+                        lerp(b, bc, base->canvas->iter),
+                        lerp(a, ac, base->canvas->iter));
                 can++;
                 cur++;
                 prv++;
             }
-        }
+        } dissolve_iter(base);
+    }
+}
+
+static inline void dissolve_and_free_prev_scene(cdlv_base* base) {
+    if(base->canvas->raw_pixels) {
+        for(size_t y=0; y < base->canvas->h; y++) {
+            uint32_t* can = get_pixel_row(
+                    base->canvas->raw_pixels, 
+                    base->canvas->raw_pitch, y);
+            uint32_t* cur = get_pixel_row(
+                    base->scenes[base->c_scene]->images[base->c_image]->pixels, 
+                    base->scenes[base->c_scene]->images[base->c_image]->pitch, y);
+            uint32_t* prv = get_pixel_row(
+                    base->scenes[base->c_scene-1]->images[base->scenes[base->c_scene-1]->image_count-1]->pixels, 
+                    base->scenes[base->c_scene-1]->images[base->scenes[base->c_scene-1]->image_count-1]->pitch, y);
+            for(size_t x=0; x < base->canvas->w; x++) {
+                uint8_t r, g, b, a,
+                        rc, gc, bc, ac;
+                SDL_GetRGBA(*prv,
+                        base->scenes[base->c_scene]->images[base->c_image]->format,
+                        &r,&g,&b,&a);
+                SDL_GetRGBA(*cur,
+                        base->scenes[base->c_scene]->images[base->c_image]->format,
+                        &rc,&gc,&bc,&ac);
+                *can = SDL_MapRGBA(
+                        base->scenes[base->c_scene]->images[base->c_image]->format,
+                        lerp(r, rc, base->canvas->iter),
+                        lerp(g, gc, base->canvas->iter),
+                        lerp(b, bc, base->canvas->iter),
+                        lerp(a, ac, base->canvas->iter));
+                can++;
+                cur++;
+                prv++;
+            }
+        } 
         base->accum += base->e_ticks * 60.0f;
         if(base->accum > 1) {
-            if(iter<256) iter+=4;
-            else changing=false;
+            if(base->canvas->iter<256)
+                base->canvas->iter+=base->config->dissolve_speed;
+            else {
+                base->canvas->changing=false;
+                free(base->scenes[base->c_scene-1]->images[base->c_scene-1]);
+                free(base->scenes[base->c_scene-1]->images);
+                base->scenes[base->c_scene-1]->images = NULL;
+            }
         }
+
     }
 }
 
@@ -348,13 +430,13 @@ void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
     }
     SDL_RenderClear(*r);
     if(cdlv_temp_scene->type == cdlv_static_scene) {
-        if(changing) {
+        if(base->canvas->changing) {
             cdlv_canvas_lock(base->canvas);
             if(base->c_image > 0) {
-                dissolve(base);
+                dissolve_images(base);
             } else {
-                cdlv_canvas_copy_pixels(base->canvas, cdlv_scene_pixels(cdlv_temp_scene, base->c_image));
-                changing = false;
+                if(base->c_scene > 0) dissolve_and_free_prev_scene(base);
+                else dissolve_black(base);
             }
             cdlv_canvas_unlock(base->canvas);
         } else cdlv_canvas_copy_buffer(base->canvas,

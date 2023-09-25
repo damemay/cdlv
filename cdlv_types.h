@@ -53,6 +53,9 @@ typedef struct cdlv_canvas {
     int raw_pitch;
     void* raw_pixels;
     size_t framerate;
+
+    size_t iter;
+    bool changing;
 } cdlv_canvas;
 
 typedef struct cdlv_text {
@@ -72,10 +75,13 @@ typedef struct cdlv_config {
     uint32_t text_wrap;
     size_t text_x;
     size_t text_y;
-    size_t text_color_r;
-    size_t text_color_g;
-    size_t text_color_b;
-    size_t text_color_a;
+    uint8_t text_color_r;
+    uint8_t text_color_g;
+    uint8_t text_color_b;
+    uint8_t text_color_a;
+
+    int dissolve;
+    uint8_t dissolve_speed;
 } cdlv_config;
 
 typedef struct cdlv_base {

@@ -19,6 +19,8 @@ int main(int argc, char* argv[]) {
         .text_color_g = 255,
         .text_color_b = 255,
         .text_color_a = 255,
+        .dissolve = true,
+        .dissolve_speed = 4,
     };
     cdlv_base* base = cdlv_create(&config);
     cdlv_menu* menu = NULL;

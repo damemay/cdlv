@@ -109,11 +109,12 @@ void cdlv_clean_scenes(cdlv_base* base) {
             if(base->scenes[i]) {
                 if(base->scenes[i]->image_paths) {
                     for(size_t j=0; j<base->scenes[i]->image_count; ++j) {
-                        if(base->scenes[i]->image_paths[j]) free(base->scenes[i]->image_paths[j]);
-                        if(base->scenes[i]->images) if(base->scenes[i]->images[j]) free(base->scenes[i]->images[j]);
+                        if(base->scenes[i]->image_paths[j])
+                            free(base->scenes[i]->image_paths[j]);
                     }
                     free(base->scenes[i]->image_paths);
-                    if(base->scenes[i]->images) free(base->scenes[i]->images);
+                    if(base->scenes[i]->images)
+                        free(base->scenes[i]->images);
                 }
                 if(base->scenes[i]->script) {
                     for(size_t j=0; j<base->scenes[i]->line_count; ++j)
