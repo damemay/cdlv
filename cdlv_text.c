@@ -7,19 +7,24 @@ static inline void text_font_create(cdlv_text* text, const char* path, SDL_Rende
         "\"%s\": %s", path, SDL_GetError());
 
     SDL_Surface* s = NULL;
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
     s = SDL_CreateRGBSurface(0, cdlv_font_atlas_size, cdlv_font_atlas_size,
-            32, 0, 0, 0, 255);
+            32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+#else
+    s = SDL_CreateRGBSurface(0, cdlv_font_atlas_size, cdlv_font_atlas_size,
+            32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+#endif
     if(!s) cdlv_diev("Could not create surface for font atlas: %s", SDL_GetError());
-    SDL_SetColorKey(s, SDL_TRUE, SDL_MapRGBA(s->format, 0, 0, 0, 0));
-    // SDL_SetSurfaceBlendMode(s, SDL_BLENDMODE_BLEND);
+    //SDL_SetSurfaceBlendMode(s, SDL_BLENDMODE_BLEND);
 
     cdlv_alloc_ptr_arr(&text->glyphs, cdlv_ascii_count, SDL_Rect);
 
     SDL_Rect dest = {0, 0, 0, 0};
     for(uint32_t i=' '; i<='~'; ++i) {
         SDL_Surface* g = NULL;
-        g = TTF_RenderGlyph32_Blended(text->font, i, text->color);
+        g = TTF_RenderGlyph32_Shaded(text->font, i, text->color, text->bg);
         if(!g) cdlv_diev("Could not render glyph: %s", TTF_GetError());
+        SDL_SetSurfaceBlendMode(g, SDL_BLENDMODE_NONE);
 
         int minx = 0;
         int maxx = 0;
