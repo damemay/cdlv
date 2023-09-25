@@ -55,13 +55,10 @@ int main() {
     sdl_base* sdl = sdl_create("sample", 640, 480);
 
     cdlv_config config = {
+        .text_x             = 50,
+        .text_y             = 400,
         .text_wrap          = 1200,
-        .text_x             = 100,
-        .text_y             = 100,
-        .text_color_r       = 255,
-        .text_color_g       = 255,
-        .text_color_b       = 255,
-        .text_color_a       = 255,
+        .text_color         = {255, 255, 255, 255},
 
         .dissolve           = true,
         .dissolve_speed     = 4,
