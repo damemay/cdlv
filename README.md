@@ -111,7 +111,7 @@ int main() {
 
 ## To do
 - [ ] rename scene definition tags.
-- [ ] dissolve effect between images.
+- [x] dissolve effect between images.
 - [ ] typewriter effect.
 - [ ] make a consistent gui.
 - [x] refactor parsing code.
