@@ -22,11 +22,15 @@ include_directories(
 )
 
 add_executable(${PROJECT_NAME}
-  src/main.c
-  src/cdlv_base.c
-  src/cdlv_main.c
-  src/cdlv_parse.c
-  src/cdlv_menu.c
+  menu/main.c
+  cdlv_base.c
+  cdlv_main.c
+  cdlv_parse.c
+  menu/cdlv_menu.c
+  cdlv_text.c
+  cdlv_render.c
+  cdlv_choice.c
+  cdlv_util.c
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -111,6 +115,7 @@ else()
         cdlv_text.c
         cdlv_render.c
         cdlv_choice.c
+        cdlv_util.c
     )
 
     set(EXEC_NAME cdlv-menu)

@@ -1,65 +1,5 @@
 #include "cdlv.h"
-
-static inline char* read_file(const char* path) {
-    FILE* file = fopen(path, "rb");
-    if(!file) perror("file"), exit(EXIT_FAILURE);
-
-    fseek(file, 0L, SEEK_END);
-    long size = ftell(file);
-    rewind(file);
-
-    char* code = malloc(size+1);
-    if(!code)
-        fclose(file), cdlv_diev("Could not allocate memory for file: %s", path);
-
-    if(fread(code, size, 1, file) != 1)
-        fclose(file), free(code), cdlv_diev("Could not read file: %s", path);
-
-    fclose(file);
-    code[size] = '\0';
-    return code;
-}
-
-static inline char** read_file_in_lines(const char* path, size_t* line_count) {
-    FILE* file = fopen(path, "rb");
-    if(!file) perror("file"), exit(EXIT_FAILURE);
-
-    fseek(file, 0L, SEEK_END);
-    long size = ftell(file);
-    rewind(file);
-
-    char** code = malloc(size+1);
-    if(!code)
-        fclose(file), cdlv_diev("Could not allocate memory for file: %s", path);
-    
-    char* temp = malloc(size+1);
-    if(!temp)
-        fclose(file), cdlv_diev("Could not allocate memory for file: %s", path);
-
-    if(fread(temp, size, 1, file) != 1)
-        fclose(file), free(temp), cdlv_diev("Could not read file: %s", path);
-    temp[size] = '\0';
-
-    char* line = strtok(temp, "\r\n");
-    size_t i = 0;
-    while(line) {
-        cdlv_duplicate_string(&code[i], line, strlen(line)+1);
-        ++i;
-        line = strtok(NULL, "\r\n");
-    }
-
-    if(feof(file)) fclose(file);
-    free(temp);
-
-    *line_count = i;
-    return code;
-}
-
-static inline void free_file_in_lines(char** file, const size_t line_count) {
-    for(size_t i=0; i<line_count; ++i) free(file[i]);
-    free(file);
-}
-
+#include "cdlv_util.h"
 
 static inline void scenes_alloc(cdlv_base* base, const size_t count) {
     base->scenes = calloc(count, sizeof(cdlv_scene));
@@ -177,7 +117,7 @@ static inline void copy_scene_data(cdlv_base* base, char* const* file, const siz
 
 void cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
     size_t lines;
-    char** script = read_file_in_lines(file, &lines);
+    char** script = cdlv_read_file_in_lines(file, &lines);
     size_t canvas_w, canvas_h, framerate;
     char font_path[1024];
     size_t font_size;
@@ -190,13 +130,13 @@ void cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
     cdlv_text_create(base, font_path, font_size,
             base->config->text_wrap,
             base->config->text_x, base->config->text_y,
-            base->config->text_color_r, base->config->text_color_g,
-            base->config->text_color_b, base->config->text_color_a,
+            base->config->text_color.r, base->config->text_color.g,
+            base->config->text_color.b, base->config->text_color.a,
             *r);
 
     base->scene_count = count_scenes(script, lines);
     scenes_alloc(base, base->scene_count);
     count_scene_data(base, script, lines);
     copy_scene_data(base, script, lines);
-    free_file_in_lines(script, lines);
+    cdlv_free_file_in_lines(script, lines);
 }

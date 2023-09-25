@@ -27,4 +27,8 @@ void cdlv_handle_keys(cdlv_base* base, SDL_Event* e);
 void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r);
 void cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r);
 
+char* cdlv_read_file_to_str(const char* path);
+char** cdlv_read_file_in_lines(const char* path, size_t* line_count);
+void cdlv_free_file_in_lines(char** file, const size_t line_count);
+
 #endif

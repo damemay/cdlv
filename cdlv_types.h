@@ -71,14 +71,18 @@ typedef struct cdlv_text {
     uint32_t wrap;
 } cdlv_text;
 
+typedef struct cdlv_color {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t a;
+} cdlv_color;
+
 typedef struct cdlv_config {
-    uint32_t text_wrap;
     size_t text_x;
     size_t text_y;
-    uint8_t text_color_r;
-    uint8_t text_color_g;
-    uint8_t text_color_b;
-    uint8_t text_color_a;
+    uint32_t text_wrap;
+    cdlv_color text_color;
 
     int dissolve;
     uint8_t dissolve_speed;

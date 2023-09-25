@@ -12,13 +12,10 @@ extern unsigned int _newlib_heap_size_user = 300*1024*1024;
 int main(int argc, char* argv[]) {
     sdl_base* sdl = sdl_create(TITLE, WIDTH, HEIGHT);
     cdlv_config config = {
-        .text_wrap = 1200,
         .text_x = 50,
         .text_y = 400,
-        .text_color_r = 255,
-        .text_color_g = 255,
-        .text_color_b = 255,
-        .text_color_a = 255,
+        .text_wrap = 1200,
+        .text_color = {255, 255, 255, 255},
         .dissolve = true,
         .dissolve_speed = 4,
     };
