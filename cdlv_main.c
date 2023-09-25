@@ -3,6 +3,8 @@
 size_t iter = 0;
 size_t count = 10000;
 
+bool changing = false;
+
 void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
     base->canvas = malloc(sizeof(cdlv_canvas));
     if(!base->canvas)
@@ -171,8 +173,10 @@ static inline void cdlv_update(cdlv_base* base) {
             if(cdlv_temp_line[0] == '@') {
                 // @ is now a function determinator, we need to check what it actually does
                 if(strstr(cdlv_temp_line, cdlv_tag_func_image)) {
-                    if(cdlv_change_image(base, cdlv_temp_scene, cdlv_temp_line))
+                    if(cdlv_change_image(base, cdlv_temp_scene, cdlv_temp_line)) {
+                        changing = true;
                         cdlv_update(base);
+                    }
                 } else if(strstr(cdlv_temp_line, cdlv_tag_func_choice)) {
                     cdlv_choice_create(base);
                     cdlv_update(base);
@@ -279,17 +283,53 @@ static inline void cdlv_canvas_copy_buffer(cdlv_canvas* canvas, void* buff) {
     cdlv_canvas_unlock(canvas);
 }
 
-static inline void cdlv_canvas_dissolve_buffer(cdlv_canvas* canvas, void* buff) {
-    cdlv_canvas_lock(canvas);
-    if(canvas->raw_pixels) {
-        if(iter<canvas->raw_pitch*canvas->h) {
-            for(size_t i=0; i<count; ++i)
-                if(((uint8_t*)canvas->raw_pixels)[iter+i] != ((uint8_t*)buff)[iter+i])
-                    ((uint8_t*)canvas->raw_pixels)[iter+i]=((uint8_t*)buff)[iter+i];
-            iter += count;
-        } 
+static inline uint8_t lerp(uint8_t a, uint8_t b, size_t t) {
+    int x = a*(256-t) + b*t;
+    uint8_t res = x >> 8;
+    return res;
+}
+
+static inline void dissolve(cdlv_base* base) {
+    if(base->canvas->raw_pixels) {
+        for(size_t y=0; y < base->canvas->h; y++) {
+            uint32_t* can = (uint32_t*)(
+                    (uint8_t*)base->canvas->raw_pixels +
+                    base->canvas->raw_pitch * y);
+            uint32_t* cur = (uint32_t*)(
+                    (uint8_t*)
+                    base->scenes[base->c_scene]->images[base->c_image]->pixels + 
+                    base->scenes[base->c_scene]->images[base->c_image]->pitch * y);
+            uint32_t* prv = (uint32_t*)(
+                    (uint8_t*)
+                    base->scenes[base->c_scene]->images[base->c_image-1]->pixels +
+                    base->scenes[base->c_scene]->images[base->c_image-1]->pitch * y);
+            for(size_t x=0; x < base->canvas->w; x++) {
+                uint8_t r, g, b, a,
+                        rc, gc, bc, ac;
+                SDL_GetRGBA(*prv,
+                        base->scenes[base->c_scene]->images[base->c_image]->format,
+                        &r,&g,&b,&a);
+                SDL_GetRGBA(*cur,
+                        base->scenes[base->c_scene]->images[base->c_image]->format,
+                        &rc,&gc,&bc,&ac);
+                uint8_t rl = lerp(r, rc, iter);
+                uint8_t gl = lerp(g, gc, iter);
+                uint8_t bl = lerp(b, bc, iter);
+                uint8_t al = lerp(a, ac, iter);
+                *can = SDL_MapRGBA(
+                        base->scenes[base->c_scene]->images[base->c_image]->format,
+                        rl, gl, bl, al);
+                can++;
+                cur++;
+                prv++;
+            }
+        }
+        base->accum += base->e_ticks * 60.0f;
+        if(base->accum > 1) {
+            if(iter<256) iter+=4;
+            else changing=false;
+        }
     }
-    cdlv_canvas_unlock(canvas);
 }
 
 void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
@@ -308,8 +348,17 @@ void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
     }
     SDL_RenderClear(*r);
     if(cdlv_temp_scene->type == cdlv_static_scene) {
-        cdlv_canvas_dissolve_buffer(base->canvas,
-                cdlv_scene_pixels(cdlv_temp_scene, base->c_image));
+        if(changing) {
+            cdlv_canvas_lock(base->canvas);
+            if(base->c_image > 0) {
+                dissolve(base);
+            } else {
+                cdlv_canvas_copy_pixels(base->canvas, cdlv_scene_pixels(cdlv_temp_scene, base->c_image));
+                changing = false;
+            }
+            cdlv_canvas_unlock(base->canvas);
+        } else cdlv_canvas_copy_buffer(base->canvas,
+              cdlv_scene_pixels(cdlv_temp_scene, base->c_image));
     } else if(cdlv_temp_scene->type == cdlv_anim_scene) {
         cdlv_anim();
     } else if(cdlv_temp_scene->type == cdlv_anim_text_scene) {
