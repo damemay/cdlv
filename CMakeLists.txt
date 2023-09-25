@@ -109,6 +109,8 @@ else()
         cdlv_parse.c
         cdlv_main.c
         cdlv_text.c
+        cdlv_render.c
+        cdlv_choice.c
     )
 
     set(EXEC_NAME cdlv-menu)

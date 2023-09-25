@@ -1,4 +1,5 @@
 #include "cdlv.h"
+#include "cdlv_util.h"
 
 void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
     base->canvas = malloc(sizeof(cdlv_canvas));
@@ -65,7 +66,7 @@ static inline void cdlv_scene_clean_leave_last(cdlv_scene* scene) {
         SDL_FreeSurface(scene->images[i]);
 }
 
-static inline void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
+void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
     if(index < base->scene_count) {
         base->canvas->iter = 0;
         if(base->config->dissolve) base->canvas->changing = true;
@@ -96,46 +97,6 @@ static inline bool cdlv_change_image(cdlv_base* base, cdlv_scene* scene, const c
     return false;
 }
 
-static inline void cdlv_choice_create(cdlv_base* base) {
-    base->choice = malloc(sizeof(cdlv_choice));
-    if(!base->choice)
-        cdlv_die("Could not allocate memory for a new scripted choice!");
-
-    base->choice->count               = 0;
-    base->choice->current             = 0;
-    base->choice->state               = cdlv_parsing;
-    base->choice->destinations        = NULL;
-    base->choice->options             = NULL;
-    base->choice->prompt              = NULL;
-    cdlv_alloc_ptr_arr(&base->choice->destinations, cdlv_max_choice_count, size_t);
-    cdlv_alloc_ptr_arr(&base->choice->options, cdlv_max_choice_count, char*);
-    cdlv_alloc_ptr_arr(&base->choice->prompt, cdlv_max_string_size, char);
-}
-
-static inline void cdlv_choice_clean(cdlv_base* base) {
-    for(size_t i=0;i<cdlv_max_choice_count; ++i)
-        if(base->choice->options[i]) free(base->choice->options[i]);
-    free(base->choice->options);
-    free(base->choice->prompt);
-    free(base->choice->destinations);
-    free(base->choice);
-    base->choice = NULL;
-}
-
-static inline void cdlv_choice_add(cdlv_base* base, const char* line) {
-    const char chars[12] = "1234567890 ";
-    size_t d = 0;
-    size_t s = 0;
-    if((sscanf(line, "%lu", &d)) != 0)
-        if(d < base->scene_count)
-            s = strspn(line, chars);
-    if(s>0 && base->choice->count < cdlv_max_choice_count) {
-        base->choice->destinations[base->choice->count] = d;
-        cdlv_duplicate_string(&base->choice->options[base->choice->count], line+s, strlen(line+s)+1);
-        ++base->choice->count;
-    }
-}
-
 static inline void choice_update_prompt(cdlv_base* base) {
     if(base->choice->current < base->choice->count) {
         sprintf(base->choice->prompt, cdlv_arrow);
@@ -155,10 +116,9 @@ static inline void cdlv_goto(cdlv_base* base, const char* line) {
             cdlv_scene_load(base, base->c_scene, i);
 }
 
-
-static inline void cdlv_update(cdlv_base* base) {
-    #define cdlv_temp_scene base->scenes[base->c_scene]
-    #define cdlv_temp_line base->scenes[base->c_scene]->script[base->c_line]
+void cdlv_update(cdlv_base* base) {
+    cdlv_scene* cdlv_temp_scene = base->scenes[base->c_scene];
+    char* cdlv_temp_line = base->scenes[base->c_scene]->script[base->c_line];
     if(cdlv_temp_scene->type == cdlv_anim_once_scene
         || cdlv_temp_scene->type == cdlv_anim_wait_scene) {
         cdlv_scene_load(base, base->c_scene, base->c_scene+1);
@@ -197,20 +157,6 @@ static inline void cdlv_update(cdlv_base* base) {
             } else cdlv_text_update(base, cdlv_temp_line);
         }
     }
-    #undef cdlv_temp_line
-    #undef cdlv_temp_scene
-}
-
-static inline bool cdlv_choice_switch(cdlv_base* base, size_t ch) {
-    if(base->choice->destinations[ch]) {
-        cdlv_scene_load(base, base->c_scene, base->choice->destinations[ch]);
-        return true;
-    }
-    return false;
-}
-
-static inline void cdlv_choice_handler(cdlv_base* base, size_t ch) {
-    if(cdlv_choice_switch(base, ch)) cdlv_choice_clean(base);
 }
 
 void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
@@ -253,214 +199,6 @@ void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
                     break;
         }
     }
-}
-
-static inline void* cdlv_scene_pixels(cdlv_scene* scene, const size_t index) {
-    return scene->images[index]->pixels;
-}
-
-static inline void cdlv_canvas_lock(cdlv_canvas* canvas) {
-    if(!canvas->raw_pixels)
-        if(SDL_LockTexture(canvas->tex,
-            NULL, &canvas->raw_pixels,
-            &canvas->raw_pitch) != 0)
-                cdlv_diev("Could not lock texture: %s", SDL_GetError());
-}
-
-static inline void cdlv_canvas_unlock(cdlv_canvas* canvas) {
-    if(canvas->raw_pixels) {
-        SDL_UnlockTexture(canvas->tex);
-        canvas->raw_pitch = 0;
-        canvas->raw_pixels = NULL;
-    }
-}
-
-static inline void cdlv_canvas_copy_pixels(cdlv_canvas* canvas, void* pixels) {
-    if(canvas->raw_pixels)
-        memcpy(canvas->raw_pixels, pixels, canvas->raw_pitch*canvas->h);
-}
-
-static inline void cdlv_canvas_copy_buffer(cdlv_canvas* canvas, void* buff) {
-    cdlv_canvas_lock(canvas);
-    cdlv_canvas_copy_pixels(canvas, buff);
-    cdlv_canvas_unlock(canvas);
-}
-
-static inline uint8_t lerp(uint8_t a, uint8_t b, size_t t) {
-    int x = a*(256-t) + b*t;
-    uint8_t res = x >> 8;
-    return res;
-}
-
-static inline uint32_t* get_pixel_row(void* pixels, int pitch, size_t y) {
-    return (uint32_t*)((uint8_t*)pixels + pitch * y);
-}
-
-static inline void dissolve_iter(cdlv_base* base) {
-    base->accum += base->e_ticks * 60.0f;
-    if(base->accum > 1) {
-        if(base->canvas->iter<256)
-            base->canvas->iter+=base->config->dissolve_speed;
-        else base->canvas->changing=false;
-    }
-}
-
-static inline void dissolve_black(cdlv_base* base) {
-    if(base->canvas->raw_pixels) {
-        for(size_t y=0; y < base->canvas->h; y++) {
-            uint32_t* can = get_pixel_row(
-                    base->canvas->raw_pixels, 
-                    base->canvas->raw_pitch, y);
-            uint32_t* cur = get_pixel_row(
-                    base->scenes[base->c_scene]->images[base->c_image]->pixels, 
-                    base->scenes[base->c_scene]->images[base->c_image]->pitch, y);
-            for(size_t x=0; x < base->canvas->w; x++) {
-                uint8_t rc, gc, bc, ac;
-                SDL_GetRGBA(*cur,
-                        base->scenes[base->c_scene]->images[base->c_image]->format,
-                        &rc,&gc,&bc,&ac);
-                *can = SDL_MapRGBA(
-                        base->scenes[base->c_scene]->images[base->c_image]->format,
-                        lerp(0, rc, base->canvas->iter),
-                        lerp(0, gc, base->canvas->iter),
-                        lerp(0, bc, base->canvas->iter),
-                        lerp(0, ac, base->canvas->iter));
-                can++;
-                cur++;
-            }
-        } dissolve_iter(base);
-    }
-}
-
-static inline void dissolve_images(cdlv_base* base) {
-    if(base->canvas->raw_pixels) {
-        for(size_t y=0; y < base->canvas->h; y++) {
-            uint32_t* can = get_pixel_row(
-                    base->canvas->raw_pixels, 
-                    base->canvas->raw_pitch, y);
-            uint32_t* cur = get_pixel_row(
-                    base->scenes[base->c_scene]->images[base->c_image]->pixels, 
-                    base->scenes[base->c_scene]->images[base->c_image]->pitch, y);
-            uint32_t* prv = get_pixel_row(
-                    base->scenes[base->c_scene]->images[base->c_image-1]->pixels, 
-                    base->scenes[base->c_scene]->images[base->c_image-1]->pitch, y);
-            for(size_t x=0; x < base->canvas->w; x++) {
-                uint8_t r, g, b, a,
-                        rc, gc, bc, ac;
-                SDL_GetRGBA(*prv,
-                        base->scenes[base->c_scene]->images[base->c_image]->format,
-                        &r,&g,&b,&a);
-                SDL_GetRGBA(*cur,
-                        base->scenes[base->c_scene]->images[base->c_image]->format,
-                        &rc,&gc,&bc,&ac);
-                *can = SDL_MapRGBA(
-                        base->scenes[base->c_scene]->images[base->c_image]->format,
-                        lerp(r, rc, base->canvas->iter),
-                        lerp(g, gc, base->canvas->iter),
-                        lerp(b, bc, base->canvas->iter),
-                        lerp(a, ac, base->canvas->iter));
-                can++;
-                cur++;
-                prv++;
-            }
-        } dissolve_iter(base);
-    }
-}
-
-static inline void dissolve_and_free_prev_scene(cdlv_base* base) {
-    if(base->canvas->raw_pixels) {
-        for(size_t y=0; y < base->canvas->h; y++) {
-            uint32_t* can = get_pixel_row(
-                    base->canvas->raw_pixels, 
-                    base->canvas->raw_pitch, y);
-            uint32_t* cur = get_pixel_row(
-                    base->scenes[base->c_scene]->images[base->c_image]->pixels, 
-                    base->scenes[base->c_scene]->images[base->c_image]->pitch, y);
-            uint32_t* prv = get_pixel_row(
-                    base->scenes[base->c_scene-1]->images[base->scenes[base->c_scene-1]->image_count-1]->pixels, 
-                    base->scenes[base->c_scene-1]->images[base->scenes[base->c_scene-1]->image_count-1]->pitch, y);
-            for(size_t x=0; x < base->canvas->w; x++) {
-                uint8_t r, g, b, a,
-                        rc, gc, bc, ac;
-                SDL_GetRGBA(*prv,
-                        base->scenes[base->c_scene]->images[base->c_image]->format,
-                        &r,&g,&b,&a);
-                SDL_GetRGBA(*cur,
-                        base->scenes[base->c_scene]->images[base->c_image]->format,
-                        &rc,&gc,&bc,&ac);
-                *can = SDL_MapRGBA(
-                        base->scenes[base->c_scene]->images[base->c_image]->format,
-                        lerp(r, rc, base->canvas->iter),
-                        lerp(g, gc, base->canvas->iter),
-                        lerp(b, bc, base->canvas->iter),
-                        lerp(a, ac, base->canvas->iter));
-                can++;
-                cur++;
-                prv++;
-            }
-        } 
-        base->accum += base->e_ticks * 60.0f;
-        if(base->accum > 1) {
-            if(base->canvas->iter<256)
-                base->canvas->iter+=base->config->dissolve_speed;
-            else {
-                base->canvas->changing=false;
-                free(base->scenes[base->c_scene-1]->images[base->c_scene-1]);
-                free(base->scenes[base->c_scene-1]->images);
-                base->scenes[base->c_scene-1]->images = NULL;
-            }
-        }
-
-    }
-}
-
-void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
-    #define cdlv_temp_scene base->scenes[base->c_scene]
-    #define cdlv_anim()                                     \
-    base->accum += base->e_ticks * base->canvas->framerate;       \
-    if(base->accum > 1) {                                   \
-        size_t n_frame = base->c_image + 1;                 \
-        n_frame %= cdlv_temp_scene->image_count;                      \
-        if(n_frame < cdlv_temp_scene->image_count) {                  \
-            base->c_image = n_frame;                        \
-            base->accum = 0;                                \
-            cdlv_canvas_copy_buffer(base->canvas,                 \
-                    cdlv_temp_scene->images[base->c_image]->pixels);  \
-        }                                                   \
-    }
-    SDL_RenderClear(*r);
-    if(cdlv_temp_scene->type == cdlv_static_scene) {
-        if(base->canvas->changing) {
-            cdlv_canvas_lock(base->canvas);
-            if(base->c_image > 0) {
-                dissolve_images(base);
-            } else {
-                if(base->c_scene > 0) dissolve_and_free_prev_scene(base);
-                else dissolve_black(base);
-            }
-            cdlv_canvas_unlock(base->canvas);
-        } else cdlv_canvas_copy_buffer(base->canvas,
-              cdlv_scene_pixels(cdlv_temp_scene, base->c_image));
-    } else if(cdlv_temp_scene->type == cdlv_anim_scene) {
-        cdlv_anim();
-    } else if(cdlv_temp_scene->type == cdlv_anim_text_scene) {
-        if(base->c_image != cdlv_temp_scene->image_count-1) cdlv_anim();
-    } else if(cdlv_temp_scene->type == cdlv_anim_once_scene
-            || cdlv_temp_scene->type == cdlv_anim_wait_scene) {
-        if(base->c_image != cdlv_temp_scene->image_count-1) {
-            cdlv_anim();
-        } else {
-            base->can_interact = true;
-            if(cdlv_temp_scene->type == cdlv_anim_once_scene)
-                cdlv_update(base);
-            else if(cdlv_temp_scene->type == cdlv_anim_wait_scene)
-                cdlv_text_update(base, cdlv_continue);
-        }
-    }
-    SDL_RenderCopy(*r, base->canvas->tex, NULL, NULL);
-    if(base->can_interact) cdlv_text_render(base, *r);
-    #undef cdlv_anim
-    #undef cdlv_temp_scene
 }
 
 void cdlv_loop_start(cdlv_base* base, SDL_Event* e, int* run) {
