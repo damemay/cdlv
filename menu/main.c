@@ -16,6 +16,7 @@ int main(int argc, char* argv[]) {
         .text_y = 400,
         .text_wrap = 1200,
         .text_color = {255, 255, 255, 255},
+        .text_render_bg = true,
         .dissolve = true,
         .dissolve_speed = 4,
     };

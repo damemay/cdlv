@@ -1,6 +1,6 @@
 #include "cdlv.h"
 
-static inline void text_font_create(cdlv_text* text, const char* path, SDL_Renderer* renderer) {
+static inline void text_font_create(cdlv_text* text, bool bg, const char* path, SDL_Renderer* renderer) {
     text->font = TTF_OpenFont(path, text->size);
     if(!text->font)
         cdlv_diev("Could not create font from file at path: "
@@ -22,7 +22,10 @@ static inline void text_font_create(cdlv_text* text, const char* path, SDL_Rende
     SDL_Rect dest = {0, 0, 0, 0};
     for(uint32_t i=' '; i<='~'; ++i) {
         SDL_Surface* g = NULL;
-        g = TTF_RenderGlyph32_Shaded(text->font, i, text->color, text->bg);
+        if(bg)
+            g = TTF_RenderGlyph32_Shaded(text->font, i, text->color, text->bg);
+        else
+            g = TTF_RenderGlyph32_Blended(text->font, i, text->color);
         if(!g) cdlv_diev("Could not render glyph: %s", TTF_GetError());
         SDL_SetSurfaceBlendMode(g, SDL_BLENDMODE_NONE);
 
@@ -81,7 +84,7 @@ void cdlv_text_create(cdlv_base* base, const char* path,
     base->text->w = 0;
     base->text->h = 0;
     base->text->wrap = wrap;
-    text_font_create(base->text, path, renderer);
+    text_font_create(base->text, base->config->text_render_bg, path, renderer);
 }
 
 void cdlv_text_update(cdlv_base* base, const char* content) {

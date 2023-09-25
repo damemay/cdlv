@@ -83,6 +83,7 @@ typedef struct cdlv_config {
     size_t text_y;
     uint32_t text_wrap;
     cdlv_color text_color;
+    bool text_render_bg;
 
     int dissolve;
     uint8_t dissolve_speed;
