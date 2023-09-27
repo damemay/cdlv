@@ -111,7 +111,7 @@ int main() {
 ## To do
 - [ ] rename scene definition tags.
 - [x] dissolve effect between images.
-- [ ] typewriter effect.
+- [x] typewriter effect.
 - [ ] make a consistent gui.
 - [x] refactor parsing code.
 - [x] anim_once option --> automatically continue or wait for player input
