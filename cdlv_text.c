@@ -1,7 +1,8 @@
 #include "cdlv.h"
+#include "cdlv_util.h"
 
 static inline void text_font_create(cdlv_text* text, bool bg, const char* path, SDL_Renderer* renderer) {
-    text->font = TTF_OpenFont(path, text->size);
+    text->font = TTF_OpenFont(path, text->font_size);
     if(!text->font)
         cdlv_diev("Could not create font from file at path: "
         "\"%s\": %s", path, SDL_GetError());
@@ -15,7 +16,6 @@ static inline void text_font_create(cdlv_text* text, bool bg, const char* path, 
             32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 #endif
     if(!s) cdlv_diev("Could not create surface for font atlas: %s", SDL_GetError());
-    //SDL_SetSurfaceBlendMode(s, SDL_BLENDMODE_BLEND);
 
     cdlv_alloc_ptr_arr(&text->glyphs, cdlv_ascii_count, SDL_Rect);
 
@@ -78,25 +78,46 @@ void cdlv_text_create(cdlv_base* base, const char* path,
     base->text->bg.g = 0;
     base->text->bg.b = 0;
     base->text->bg.a = 128;
-    base->text->size = size;
+    base->text->font_size = size;
     base->text->x = x;
     base->text->y = y;
     base->text->w = 0;
     base->text->h = 0;
     base->text->wrap = wrap;
+    base->text->current_char = 0;
+    memset(base->text->rendered, 0, cdlv_max_string_size);
+    base->text->content_size = 0;
+    base->text->accum = 0.0f;
     text_font_create(base->text, base->config->text_render_bg, path, renderer);
 }
 
+static inline void cdlv_text_type(cdlv_base* base) {
+    base->text->accum += base->e_ticks * base->config->text_speed;
+    if(base->text->accum > 1) {
+        if(base->text->current_char < base->text->content_size) {
+            base->text->accum = 0;
+            base->text->rendered[base->text->current_char] = base->text->content[base->text->current_char];
+            base->text->current_char++;
+        }
+    }
+}
+
+static inline void cdlv_text_retype(cdlv_text* text) {
+    memset(text->rendered, 0, cdlv_max_string_size);
+    text->current_char = 0;
+}
+
 void cdlv_text_update(cdlv_base* base, const char* content) {
-    size_t len = strlen(content);
-    if(len) {
-        if(len>cdlv_max_string_size)
+    base->text->content_size = strlen(content) + 1;
+    if(base->text->content_size) {
+        if(base->text->content_size > cdlv_max_string_size)
             strncpy(base->text->content, content, cdlv_max_string_size);
         else {
             memset(base->text->content, 0, cdlv_max_string_size);
             strcpy(base->text->content, content);
         }
     }
+    cdlv_text_retype(base->text);
 }
 
 static inline void text_draw_line(cdlv_text* text, size_t x, size_t y, const char* line, SDL_Renderer* renderer) {
@@ -123,7 +144,7 @@ static inline void text_draw_wrap(cdlv_text* text, SDL_Renderer* renderer) {
     size_t n = 0;
     size_t x = text->x;
     size_t y = text->y;
-    size_t length = strlen(text->content);
+    size_t length = strlen(text->rendered);
     for(size_t i=0; i<length; i++) {
         char c = text->content[i];
         word_w += text->glyphs[c].w;
@@ -156,5 +177,6 @@ static inline void text_draw_wrap(cdlv_text* text, SDL_Renderer* renderer) {
 }
 
 void cdlv_text_render(cdlv_base* base, SDL_Renderer* r) {
+    cdlv_text_type(base);
     text_draw_wrap(base->text, r);
 }

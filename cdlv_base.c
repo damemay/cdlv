@@ -80,6 +80,7 @@ cdlv_base* cdlv_create(cdlv_config* config) {
     base->e_ticks       = 0.0f;
     base->c_line        = 0;
     base->c_scene       = 0;
+    base->p_scene       = 0;
     base->c_image       = 0;
     base->accum         = 0.0f;
     base->can_interact  = true;

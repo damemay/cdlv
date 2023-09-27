@@ -72,6 +72,7 @@ void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
         if(base->config->dissolve) base->canvas->changing = true;
         else base->canvas->changing = false;
         base->c_scene = index;
+        base->p_scene = prev;
         base->c_image = 0;
         base->c_line  = 0;
         cdlv_load_images(base->canvas, base->scenes[index]);
@@ -154,7 +155,9 @@ void cdlv_update(cdlv_base* base) {
                     cdlv_choice_add(base, cdlv_temp_line);
                     cdlv_update(base);
                 }
-            } else cdlv_text_update(base, cdlv_temp_line);
+            } else {
+                cdlv_text_update(base, cdlv_temp_line);
+            }
         }
     }
 }

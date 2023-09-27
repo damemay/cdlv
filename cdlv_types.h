@@ -65,10 +65,14 @@ typedef struct cdlv_text {
     SDL_Color color;
     SDL_Color bg;
     char content[cdlv_max_string_size];
-    size_t size;
+    size_t content_size;
+    size_t font_size;
     size_t x, y;
     size_t w, h;
     uint32_t wrap;
+    char rendered[cdlv_max_string_size];
+    size_t current_char;
+    float accum;
 } cdlv_text;
 
 typedef struct cdlv_color {
@@ -84,6 +88,7 @@ typedef struct cdlv_config {
     uint32_t text_wrap;
     cdlv_color text_color;
     bool text_render_bg;
+    size_t text_speed;
 
     int dissolve;
     uint8_t dissolve_speed;
@@ -99,7 +104,7 @@ typedef struct cdlv_base {
     uint64_t c_tick, l_tick;
     float e_ticks;
     size_t scene_count;
-    size_t c_line, c_scene, c_image;
+    size_t c_line, c_scene, p_scene, c_image;
     float accum;
     bool can_interact;
 } cdlv_base;

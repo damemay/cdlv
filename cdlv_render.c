@@ -123,8 +123,8 @@ static inline void dissolve_and_free_prev_scene(cdlv_base* base) {
                     base->scenes[base->c_scene]->images[base->c_image]->pixels, 
                     base->scenes[base->c_scene]->images[base->c_image]->pitch, y);
             uint32_t* prv = get_pixel_row(
-                    base->scenes[base->c_scene-1]->images[base->scenes[base->c_scene-1]->image_count-1]->pixels, 
-                    base->scenes[base->c_scene-1]->images[base->scenes[base->c_scene-1]->image_count-1]->pitch, y);
+                    base->scenes[base->p_scene]->images[base->scenes[base->p_scene]->image_count-1]->pixels, 
+                    base->scenes[base->p_scene]->images[base->scenes[base->p_scene]->image_count-1]->pitch, y);
             for(size_t x=0; x < base->canvas->w; x++) {
                 uint8_t r, g, b, a,
                         rc, gc, bc, ac;
@@ -151,9 +151,9 @@ static inline void dissolve_and_free_prev_scene(cdlv_base* base) {
                 base->canvas->iter+=base->config->dissolve_speed;
             else {
                 base->canvas->changing=false;
-                SDL_FreeSurface(base->scenes[base->c_scene-1]->images[base->scenes[base->c_scene-1]->image_count-1]);
-                free(base->scenes[base->c_scene-1]->images);
-                base->scenes[base->c_scene-1]->images = NULL;
+                SDL_FreeSurface(base->scenes[base->p_scene]->images[base->scenes[base->p_scene]->image_count-1]);
+                free(base->scenes[base->p_scene]->images);
+                base->scenes[base->p_scene]->images = NULL;
             }
         }
 
