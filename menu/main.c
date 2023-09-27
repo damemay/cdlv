@@ -37,6 +37,8 @@ int main(int argc, char* argv[]) {
                     if(sdl->event.type == SDL_QUIT) sdl->run = false;
                     cdlv_menu_handle_keys(&base, &menu, sdl);
                 }
+                base->c_tick = SDL_GetTicks64();
+                base->e_ticks = (base->c_tick - base->l_tick) / 1000.0f;
                 cdlv_menu_render(base, sdl);
                 break;
             case cdlv_main_run:
