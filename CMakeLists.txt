@@ -96,6 +96,13 @@ else()
         )
     endif()
     
+    if(MINGW)
+	    list(APPEND CMAKE_PREFIX_PATH
+		    /c/msys64/mingw64/lib/cmake/SDL2/
+		    /c/msys64/mingw64/lib/cmake/SDL2_image/
+		    /c/msys64/mingw64/lib/cmake/SDL2_ttf/
+	    )
+    endif()
     find_package(SDL2 REQUIRED)
     find_package(SDL2_image REQUIRED)
     find_package(SDL2_ttf REQUIRED)
@@ -119,11 +126,22 @@ else()
     )
 
     set(EXEC_NAME cdlv-menu)
-    add_executable(${EXEC_NAME}
-        menu/main.c
-        menu/cdlv_menu.c
-    )
+
+    if(MINGW)
+	    add_executable(${EXEC_NAME} WIN32
+		    menu/main.c
+		    menu/cdlv_menu.c
+            )
+    else()
+	    add_executable(${EXEC_NAME}
+		menu/main.c
+		menu/cdlv_menu.c
+	    )
+    endif()
     
+    if(MINGW)
+	    set(SDL2_INCLUDE_DIRS "/c/msys64/mingw64/include/SDL2")
+    endif()
     include_directories(${EXEC_NAME}
         ${SDL2_INCLUDE_DIRS}
         ${SDL2IMAGE_INCLUDE_DIRS}
@@ -139,11 +157,23 @@ else()
             -fsanitize=address
         )
     else()
+	    if(MINGW)
+            target_link_libraries(${EXEC_NAME}
+		${PROJECT_NAME}
+		SDL2_ttf
+		SDL2_image
+		SDL2
+		SDL2main
+		mingw32
+            )
+		add_definitions(-DSDL_MAIN_HANDLED)
+	else()
         target_link_libraries(${EXEC_NAME}
             SDL2::SDL2
             SDL2_image
             SDL2_ttf
             ${PROJECT_NAME}
         )
+	endif()
     endif()
 endif()
