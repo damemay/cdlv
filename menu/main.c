@@ -14,10 +14,10 @@ int main(int argc, char* argv[]) {
     cdlv_config config = {
         .text_x = 50,
         .text_y = 400,
-        .text_wrap = 1200,
+        .text_wrap = 900,
         .text_color = {255, 255, 255, 255},
         .text_render_bg = true,
-        .text_speed = 20,
+        .text_speed = 50,
         .dissolve = true,
         .dissolve_speed = 4,
     };

@@ -132,6 +132,7 @@ void cdlv_update(cdlv_base* base) {
         } else if(base->c_line < cdlv_temp_scene->line_count) {
             // update current line
             ++base->c_line;
+            cdlv_temp_line = base->scenes[base->c_scene]->script[base->c_line];
             if(cdlv_temp_line[0] == '@') {
                 // @ is now a function determinator, we need to check what it actually does
                 if(strstr(cdlv_temp_line, cdlv_tag_func_image)) {
@@ -155,9 +156,7 @@ void cdlv_update(cdlv_base* base) {
                     cdlv_choice_add(base, cdlv_temp_line);
                     cdlv_update(base);
                 }
-            } else {
-                cdlv_text_update(base, cdlv_temp_line);
-            }
+            } else cdlv_text_update(base, cdlv_temp_line);
         }
     }
 }
