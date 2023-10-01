@@ -3,9 +3,9 @@ Simple SDL2-based engine and scripting system for ADV/VN style games being made 
 
 The goal is to create as lowest resource usage engine as possible. This is why the scripting system divides every data-heavy behavior into scenes with separately loaded resources.
 
-## Current state
+## Features
 - **Simple scripting, scene-based framework**
-- **Can be used as a separate part of another program**
+- **Compiles to static library, so that it can be used as a separate part of another program**
 - **Scenes can:**
   - have static backgrounds that are changed based on script file;
   - have looped animation;
@@ -103,17 +103,16 @@ int main() {
     - `@image [index]` changes background image in static scenes;
     - `@goto [index]` jump to scene of index;
     - `@choice` starts parsing each consequent line as a option to be chosen by the player;
+      - each choice is written as: `[index] [text]`
     - `@end` ends parsing lines as choices and displays them on screen.
 - **All indexes start from 0.**
-- Default scene image starts from the 0 index, so there's no need to set it at the start of script.
+- First scene image always starts from 0 when it's loaded.
 - Paths can be either full or relative from the executable file.
 - Images that are smaller than declared size are scaled to match it.
 
 ## To do
-- [ ] rename scene definition tags.
 - [x] dissolve effect between images.
 - [x] typewriter effect.
-- [ ] make a consistent gui.
 - [x] refactor parsing code.
 - [x] anim_once option --> automatically continue or wait for player input
   - also allow for text to be rendered if there is script added.
