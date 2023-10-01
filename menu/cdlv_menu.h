@@ -10,6 +10,7 @@ typedef struct cdlv_menu {
     char* text;
     size_t file_count;
     size_t current_choice;
+    uint8_t text_speed;
     bool path_exists;
 } cdlv_menu;
 

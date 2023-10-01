@@ -1,0 +1,11 @@
+text_font ../res/fonts/roboto.ttf
+text_size 32
+
+text_r 255
+text_g 255
+text_b 255
+
+text_speed 20
+text_wrap 1200
+text_render_bg 1
+dissolve_speed 4

@@ -52,6 +52,8 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, sdl_base* sdl) {
         sprintf(menu->text, "Folder %s not found!", path);
     }
 
+    menu->text_speed = base->config->text_speed;
+    base->config->text_speed = 0;
     cdlv_text_update(base, menu->text);
 
     return menu;
@@ -75,6 +77,7 @@ static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu, sdl_base
     if((*menu)->current_choice >= 0 && (*menu)->current_choice < (*menu)->file_count) {
         char full_path[strlen((*menu)->path)+strlen((*menu)->files[(*menu)->current_choice])+3];
         sprintf(full_path, "%s/%s", (*menu)->path, (*menu)->files[(*menu)->current_choice]);
+        (*base)->config->text_speed = (*menu)->text_speed;
         cdlv_menu_clean((*menu));
         *menu = NULL;
         cdlv_config* config = (*base)->config;
