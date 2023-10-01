@@ -1,11 +1,38 @@
 #include "cdlv.h"
 #include "cdlv_util.h"
 
+static inline void config_init(cdlv_config* config) {
+    if(!config->text_font) config->text_font = "../res/fonts/roboto.ttf";
+
+    if(!config->text_size) config->text_size = 32;
+
+    if(!config->text_wrap) config->text_wrap = 900;
+
+    if(!config->text_xy.x || !config->text_xy.y) {
+        config->text_xy.x = 50;
+        config->text_xy.y = 400;
+    }
+
+    if(!config->text_color.r || !config->text_color.g ||
+            !config->text_color.b || !config->text_color.a) {
+        config->text_color.r = 255;
+        config->text_color.g = 255;
+        config->text_color.b = 255;
+        config->text_color.a = 255;
+    }
+
+    if(!config->text_speed) config->text_speed = 250;
+
+    if(!config->dissolve_speed) config->dissolve_speed = 4;
+}
+
 cdlv_base* cdlv_create(cdlv_config* config) {
     cdlv_base* base = NULL;
     base = malloc(sizeof(cdlv_base));
     if(!base)
         cdlv_die("Could not allocate memory for cdlv_base!");
+
+    config_init(config);
 
     base->config        = config;
     base->canvas        = NULL;
