@@ -40,7 +40,7 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, sdl_base* sdl) {
     closedir(dir);
 
     cdlv_text_create(base,
-            "../res/fonts/roboto.ttf", 16, 700,
+            base->config->text_font, 16, 700,
             10, 10,
             255, 255, 255, 255, sdl->renderer);
 
