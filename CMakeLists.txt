@@ -123,6 +123,7 @@ else()
         cdlv_render.c
         cdlv_choice.c
         cdlv_util.c
+        cdlv_sdl.c
     )
 
     set(EXEC_NAME cdlv-menu)
