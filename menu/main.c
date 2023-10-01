@@ -10,15 +10,19 @@ extern unsigned int _newlib_heap_size_user = 300*1024*1024;
 #endif
 
 int main(int argc, char* argv[]) {
+    if(argc==1) {
+        puts("cdlv-menu [config path] [scripts folder path]");
+        return EXIT_FAILURE;
+    }
     sdl_base* sdl = sdl_create(TITLE, WIDTH, HEIGHT);
 
     cdlv_config config = {0};
-    cdlv_config_from_file(&config, "../menu/config.txt");
+    cdlv_config_from_file(&config, argv[1]);
     cdlv_base* base = cdlv_create(&config);
     cdlv_menu* menu = NULL;
 
     #ifndef __vita__
-    menu = cdlv_menu_create(base, "/home/mar/c/sdl_gl/cdlv/scripts", sdl);
+    menu = cdlv_menu_create(base, argv[2], sdl);
     #else
     menu = cdlv_menu_create(base, "ux0:/data/scripts", sdl->renderer);
     #endif
