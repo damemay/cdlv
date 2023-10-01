@@ -62,9 +62,8 @@ int main() {
         .text_wrap          = 1200,
         .text_color         = {255, 255, 255, 255},
         .text_render_bg     = true,
-        .text_speed         = 20,
+        .text_speed         = 0,
 
-        .dissolve           = true,
         .dissolve_speed     = 4,
     };
 

@@ -2,28 +2,40 @@
 #include "cdlv_util.h"
 
 static inline void config_init(cdlv_config* config) {
-    if(!config->text_font) config->text_font = "../res/fonts/roboto.ttf";
-
+    if(!config->text_font) strcpy(config->text_font, "../res/fonts/roboto.ttf");
     if(!config->text_size) config->text_size = 32;
-
     if(!config->text_wrap) config->text_wrap = 900;
+    if(!config->text_xy.x) config->text_xy.x = 50;
+    if(!config->text_xy.y) config->text_xy.y = 400;
+    if(!config->text_color.a) config->text_color.a = 255;
+}
 
-    if(!config->text_xy.x || !config->text_xy.y) {
-        config->text_xy.x = 50;
-        config->text_xy.y = 400;
+void cdlv_config_from_file(cdlv_config* c, const char* path) {
+    size_t lines;
+    char** file = cdlv_read_file_in_lines(path, &lines);
+
+    char name[1024];
+    char value[1024];
+
+    for(size_t i=0; i<lines; ++i) {
+        if(!sscanf(file[i], "%s %s", name, value))
+            cdlv_diev("Config error on line: %s", file[i]);
+
+        if(!strcmp(name, "text_font"))          strncpy(c->text_font, value, 1023);
+        else if(!strcmp(name, "text_size"))     c->text_size = atoi(value);
+        else if(!strcmp(name, "text_x"))        c->text_xy.x = atoi(value);
+        else if(!strcmp(name, "text_y"))        c->text_xy.y = atoi(value);
+        else if(!strcmp(name, "text_wrap"))     c->text_wrap = atoi(value);
+        else if(!strcmp(name, "text_r"))        c->text_color.r = atoi(value);
+        else if(!strcmp(name, "text_g"))        c->text_color.g = atoi(value);
+        else if(!strcmp(name, "text_b"))        c->text_color.b = atoi(value);
+        else if(!strcmp(name, "text_a"))        c->text_color.a = atoi(value);
+        else if(!strcmp(name, "text_render_bg"))c->text_render_bg = atoi(value);
+        else if(!strcmp(name, "text_speed"))    c->text_speed = atoi(value);
+        else if(!strcmp(name, "dissolve_speed"))c->dissolve_speed = atoi(value);
     }
 
-    if(!config->text_color.r || !config->text_color.g ||
-            !config->text_color.b || !config->text_color.a) {
-        config->text_color.r = 255;
-        config->text_color.g = 255;
-        config->text_color.b = 255;
-        config->text_color.a = 255;
-    }
-
-    if(!config->text_speed) config->text_speed = 250;
-
-    if(!config->dissolve_speed) config->dissolve_speed = 4;
+    cdlv_free_file_in_lines(file, lines);
 }
 
 cdlv_base* cdlv_create(cdlv_config* config) {

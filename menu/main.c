@@ -11,10 +11,9 @@ extern unsigned int _newlib_heap_size_user = 300*1024*1024;
 
 int main(int argc, char* argv[]) {
     sdl_base* sdl = sdl_create(TITLE, WIDTH, HEIGHT);
-    cdlv_config config = {
-        .text_render_bg = true,
-        .dissolve = true,
-    };
+
+    cdlv_config config = {0};
+    cdlv_config_from_file(&config, "../menu/config.txt");
     cdlv_base* base = cdlv_create(&config);
     cdlv_menu* menu = NULL;
 

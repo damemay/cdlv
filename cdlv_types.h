@@ -88,15 +88,13 @@ typedef struct cdlv_vec2 {
 } cdlv_vec2;
 
 typedef struct cdlv_config {
-    char* text_font;
+    char text_font[1024];
     uint8_t text_size;
     cdlv_vec2 text_xy;
     uint16_t text_wrap;
     cdlv_color text_color;
-    bool text_render_bg;
+    int text_render_bg;
     uint8_t text_speed;
-
-    int dissolve;
     uint8_t dissolve_speed;
 } cdlv_config;
 

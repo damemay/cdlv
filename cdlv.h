@@ -16,6 +16,7 @@ sdl_base* sdl_create(const char* title, const size_t w, const size_t h);
 void sdl_clean(sdl_base* base);
 
 void cdlv_start(cdlv_base* base);
+void cdlv_config_from_file(cdlv_config* c, const char* path);
 cdlv_base* cdlv_init_from_script(cdlv_config* config, const char* path, SDL_Renderer** r);
 
 cdlv_base* cdlv_create(cdlv_config* config);

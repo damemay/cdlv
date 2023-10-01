@@ -118,6 +118,10 @@ void cdlv_text_update(cdlv_base* base, const char* content) {
         }
     }
     cdlv_text_retype(base->text);
+    if(!base->config->text_speed) {
+        strcpy(base->text->rendered, base->text->content);
+        base->text->current_char = base->text->content_size;
+    }
 }
 
 static inline void text_draw_line(cdlv_text* text, size_t x, size_t y, const char* line, SDL_Renderer* renderer) {

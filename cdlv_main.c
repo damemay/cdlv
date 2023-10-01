@@ -16,7 +16,7 @@ void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const s
     base->canvas->raw_pixels = NULL;
     base->canvas->framerate = fps;
     base->canvas->iter = 0;
-    if(base->config->dissolve) base->canvas->changing = true;
+    if(base->config->dissolve_speed) base->canvas->changing = true;
     else base->canvas->changing = false;
 }
 
@@ -69,7 +69,7 @@ static inline void cdlv_scene_clean_leave_last(cdlv_scene* scene) {
 void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
     if(index < base->scene_count) {
         base->canvas->iter = 0;
-        if(base->config->dissolve) base->canvas->changing = true;
+        if(base->config->dissolve_speed) base->canvas->changing = true;
         else base->canvas->changing = false;
         base->c_scene = index;
         base->p_scene = prev;
@@ -81,7 +81,7 @@ void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
             base->can_interact = true;
         } else base->can_interact = false;
         if(base->c_scene) {
-            if(base->config->dissolve) 
+            if(base->config->dissolve_speed) 
                 cdlv_scene_clean_leave_last(base->scenes[prev]);
             else cdlv_scene_clean(base->scenes[prev]);
         }
@@ -139,7 +139,7 @@ void cdlv_update(cdlv_base* base) {
                 if(strstr(cdlv_temp_line, cdlv_tag_func_image)) {
                     if(cdlv_change_image(base, cdlv_temp_scene, cdlv_temp_line)) {
                         base->canvas->iter = 0;
-                        if(base->config->dissolve) base->canvas->changing = true;
+                        if(base->config->dissolve_speed) base->canvas->changing = true;
                         else base->canvas->changing = false;
                         cdlv_update(base);
                     }
