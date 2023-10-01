@@ -118,7 +118,12 @@ static inline void cdlv_goto(cdlv_base* base, const char* line) {
 }
 
 void cdlv_update(cdlv_base* base) {
-    if(base->text->current_char != base->text->content_size) return;
+    if(base->text->current_char != base->text->content_size) {
+        strcpy(base->text->rendered, base->text->content);
+        base->text->current_char = base->text->content_size;
+        return;
+    }
+
     cdlv_scene* cdlv_temp_scene = base->scenes[base->c_scene];
     char* cdlv_temp_line = base->scenes[base->c_scene]->script[base->c_line];
     if(cdlv_temp_scene->type == cdlv_anim_once_scene
