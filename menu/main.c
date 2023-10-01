@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
         .text_wrap = 900,
         .text_color = {255, 255, 255, 255},
         .text_render_bg = true,
-        .text_speed = 50,
+        .text_speed = 250,
 
         .dissolve = true,
         .dissolve_speed = 4,

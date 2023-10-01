@@ -73,23 +73,17 @@ void cdlv_menu_clean(cdlv_menu* menu) {
 
 static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu, sdl_base* sdl) {
     if((*menu)->current_choice >= 0 && (*menu)->current_choice < (*menu)->file_count) {
-        char* full_path;
-        cdlv_alloc_ptr_arr(&full_path,
-                strlen((*menu)->path)+strlen((*menu)->files[(*menu)->current_choice])+3,
-                char);
+        char full_path[strlen((*menu)->path)+strlen((*menu)->files[(*menu)->current_choice])+3];
         sprintf(full_path, "%s/%s", (*menu)->path, (*menu)->files[(*menu)->current_choice]);
         cdlv_menu_clean((*menu));
         *menu = NULL;
-        const char* title = sdl->title;
-        const size_t w = sdl->w;
-        const size_t h = sdl->h;
         cdlv_config* config = (*base)->config;
         cdlv_clean_all((*base));
         *base = NULL;
         *base = cdlv_create(config);
         (*base)->state = cdlv_main_run;
         cdlv_read_file((*base), full_path, &sdl->renderer);
-        free(full_path);
+        SDL_SetWindowSize(sdl->window, (*base)->canvas->w, (*base)->canvas->h);
         cdlv_start((*base));
     }
 }
