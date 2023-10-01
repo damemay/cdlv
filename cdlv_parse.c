@@ -119,17 +119,14 @@ void cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
     size_t lines;
     char** script = cdlv_read_file_in_lines(file, &lines);
     size_t canvas_w, canvas_h, framerate;
-    char font_path[1024];
-    size_t font_size;
-    if(!sscanf(script[0], "%lu %lu %lu %s %lu",
-                &canvas_w, &canvas_h, &framerate,
-                font_path, &font_size))
+    if(!sscanf(script[0], "%lu %lu %lu",
+                &canvas_w, &canvas_h, &framerate))
         cdlv_diev("Wrong data on the first line: %s", script[0]);
 
     cdlv_canvas_create(base, canvas_w, canvas_h, framerate, r);
-    cdlv_text_create(base, font_path, font_size,
+    cdlv_text_create(base, base->config->text_font, base->config->text_size,
             base->config->text_wrap,
-            base->config->text_x, base->config->text_y,
+            base->config->text_xy.x, base->config->text_xy.y,
             base->config->text_color.r, base->config->text_color.g,
             base->config->text_color.b, base->config->text_color.a,
             *r);

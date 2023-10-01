@@ -16,7 +16,7 @@ The goal is to create as lowest resource usage engine as possible. This is why t
   
 ##### example.adv
 ```
-640 480 3 res/esteban.ttf 32
+640 480 3
 
 !scene
   !bg
@@ -55,8 +55,10 @@ int main() {
     sdl_base* sdl = sdl_create("sample", 640, 480);
 
     cdlv_config config = {
-        .text_x             = 50,
-        .text_y             = 400,
+        .text_font          = "res/esteban.ttf",
+        .text_size          = 32,
+
+        .text_xy            = {50, 400},
         .text_wrap          = 1200,
         .text_color         = {255, 255, 255, 255},
         .text_render_bg     = true,
@@ -86,7 +88,7 @@ int main() {
 - First line **must** contain data for the whole .adv file:
 
   ```
-  [images width] [images height] [framerate for animations] [font .ttf path] [font size]
+  [images width] [images height] [framerate for animations]
   ```
 - Each scene **must** be declared with tag: `!scene`
 - Right below it should be one of the tags defining scene type:

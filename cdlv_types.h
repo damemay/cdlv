@@ -30,8 +30,8 @@ typedef enum {
 } cdlv_parse_state;
 
 typedef struct cdlv_choice {
-    size_t count;
-    size_t current;
+    uint8_t count;
+    uint8_t current;
     cdlv_parse_state state;
     size_t* destinations;
     char** options;
@@ -41,9 +41,9 @@ typedef struct cdlv_choice {
 typedef struct cdlv_scene {
     SDL_Surface** images;
     char** image_paths;
-    size_t image_count;
+    uint16_t image_count;
     char** script;
-    size_t line_count;
+    uint16_t line_count;
     cdlv_type type;
 } cdlv_scene;
 
@@ -52,9 +52,9 @@ typedef struct cdlv_canvas {
     size_t w, h;
     int raw_pitch;
     void* raw_pixels;
-    size_t framerate;
+    uint8_t framerate;
 
-    size_t iter;
+    uint16_t iter;
     bool changing;
 } cdlv_canvas;
 
@@ -65,13 +65,13 @@ typedef struct cdlv_text {
     SDL_Color color;
     SDL_Color bg;
     char content[cdlv_max_string_size];
-    size_t content_size;
-    size_t font_size;
-    size_t x, y;
-    size_t w, h;
+    uint16_t content_size;
+    uint8_t font_size;
+    uint16_t x, y;
+    uint16_t w, h;
     uint32_t wrap;
     char rendered[cdlv_max_string_size];
-    size_t current_char;
+    uint16_t current_char;
     float accum;
 } cdlv_text;
 
@@ -82,13 +82,19 @@ typedef struct cdlv_color {
     uint8_t a;
 } cdlv_color;
 
+typedef struct cdlv_vec2 {
+    uint16_t x;
+    uint16_t y;
+} cdlv_vec2;
+
 typedef struct cdlv_config {
-    size_t text_x;
-    size_t text_y;
-    uint32_t text_wrap;
+    char* text_font;
+    uint8_t text_size;
+    cdlv_vec2 text_xy;
+    uint16_t text_wrap;
     cdlv_color text_color;
     bool text_render_bg;
-    size_t text_speed;
+    uint8_t text_speed;
 
     int dissolve;
     uint8_t dissolve_speed;
@@ -103,8 +109,8 @@ typedef struct cdlv_base {
     cdlv_state state;
     uint64_t c_tick, l_tick;
     float e_ticks;
-    size_t scene_count;
-    size_t c_line, c_scene, p_scene, c_image;
+    uint8_t scene_count;
+    uint8_t c_line, c_scene, p_scene, c_image;
     float accum;
     bool can_interact;
 } cdlv_base;
@@ -115,7 +121,7 @@ typedef struct sdl_base {
     SDL_GameController** gamepads;
     SDL_Event event;
     int run;
-    size_t w, h;
+    uint16_t w, h;
     const char* title;
 } sdl_base;
 
