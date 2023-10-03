@@ -54,8 +54,6 @@ typedef struct cdlv_canvas {
     void* raw_pixels;
     uint8_t framerate;
 
-    char path[cdlv_small_string];
-
     uint16_t iter;
     bool changing;
 } cdlv_canvas;

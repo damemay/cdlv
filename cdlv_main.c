@@ -1,7 +1,7 @@
 #include "cdlv.h"
 #include "cdlv_util.h"
 
-void cdlv_canvas_create(cdlv_base* base, const char* path, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
+void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
     base->canvas = malloc(sizeof(cdlv_canvas));
     if(!base->canvas)
         cdlv_die("Could not allocate memory for cdlv_canvas!");
@@ -15,7 +15,6 @@ void cdlv_canvas_create(cdlv_base* base, const char* path, const size_t w, const
     base->canvas->raw_pitch = 0;
     base->canvas->raw_pixels = NULL;
     base->canvas->framerate = fps;
-    strncpy(base->canvas->path, path, cdlv_small_string-1);
     base->canvas->iter = 0;
     if(base->config->dissolve_speed) base->canvas->changing = true;
     else base->canvas->changing = false;
