@@ -1,7 +1,7 @@
 # cdlv
-Simple SDL2-based engine and scripting system for ADV/VN style games being made in pure C.
+Simple SDL2-based library/engine and scripting system for ADV/VN style games made in pure C.
 
-The goal is to create as lowest resource usage engine as possible. This is why the scripting system divides every data-heavy behavior into scenes with separately loaded resources.
+The goal was to create as lowest resource usage engine as possible. This is why the scripting system divides every data-heavy behavior into scenes with separately loaded resources.
 
 ## Features
 - **Simple scripting, scene-based framework**
@@ -110,12 +110,51 @@ int main() {
 - Paths can be either full or relative from the executable file.
 - Images that are smaller than declared size are scaled to match it.
 
-## To do
-- [x] dissolve effect between images.
-- [x] typewriter effect.
-- [x] refactor parsing code.
-- [x] anim_once option --> automatically continue or wait for player input
-  - also allow for text to be rendered if there is script added.
-- [x] app for playtesting .adv files, similiar to renpy.
-  - currently as a proof of concept in menu.c (to be improved upon later on)
-- [x] ~~4-button~~ choice system + ~~flowscripts for~~ jumping between scenes.
+## Building
+First, install SDL2, SDL2_image and SDL2_ttf.
+
+If not found within expected paths, you'll need to pass `CMAKE_PREFIX_PATH` or `SDL2_DIR` to cmake.
+
+For building with `VITA`, you'll need Vita SDK.
+```
+git clone https://github.com/damemay/cdlv.git
+cd cdlv
+mkdir build && cd build
+# Linux & MacOS:
+cmake .. && make
+# Windows (MinGW64):
+cmake -DMINGW=ON .. && cmake --build .
+# PS Vita:
+cmake -DVITA=ON .. && make
+```
+
+Above will build `cdlv-menu` and leave static lib named `libcdlv.a`
+
+# cdlv-menu
+Simple application for launching and testing scripts.
+
+## Usage
+
+```
+$ ./cdlv-menu 
+cdlv-menu [config path] [scripts folder path]
+```
+
+## Config file
+
+It can be any text file, where each line consists of option name followed by whitespace and it's value.
+
+#### Options:
+
+- `text_font` - string - path to .ttf file
+- `text_size` - number up to 255 - text size in points
+- `text_x` - number - text position on X-axis
+- `text_y` - number - text position on Y-axis
+- `text_wrap` - number - text wrap position
+- `text_r` - number up to 255 - text color RED
+- `text_g` - number up to 255 - text color GREEN
+- `text_b` - number up to 255 - text color BLUE
+- `text_a` - number up to 255 - text color ALPHA
+- `text_render_bg` - 0 or 1 - whether to render semi-transparent background behind text
+- `text_speed` - number up to 255 - text typewriting effect speed. 0 prints text instantly
+- `dissolve_speed` - number up to 255 - dissolve effect speed. 0 shows image instantly
