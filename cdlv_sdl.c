@@ -7,7 +7,6 @@ static inline void sdl_init(const char* title,
         SDL_GameController** sdl_g) {
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
         cdlv_diev("Could not init SDL: %s", SDL_GetError());
-    atexit(SDL_Quit);
 
     if(!(*sdl_w = SDL_CreateWindow(title,
                     SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -20,11 +19,9 @@ static inline void sdl_init(const char* title,
 
     if(!(IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG) & (IMG_INIT_JPG | IMG_INIT_PNG)))
         cdlv_diev("Could not init SDL_image: %s", IMG_GetError());
-    atexit(IMG_Quit);
 
     if(TTF_Init() == -1)
         cdlv_diev("Could not init SDL_ttf: %s", TTF_GetError());
-    atexit(TTF_Quit);
     
     int joysticks;
     if((joysticks = SDL_NumJoysticks()) > 0) {
@@ -67,5 +64,8 @@ void sdl_clean(sdl_base* base) {
     if(base->window || base->renderer)
         sdl_clean_(&base->window, &base->renderer, base->gamepads);
     free(base);
+    TTF_Quit();
+    IMG_Quit();
+    SDL_Quit();
 }
 

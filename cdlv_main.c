@@ -50,13 +50,15 @@ static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
         if(SDL_SetSurfaceBlendMode(scene->images[i], SDL_BLENDMODE_BLEND) < 0)
             cdlv_diev("Could not set alpha blending on image with path \"%s\": %s",
                 scene->image_paths[i], SDL_GetError());
-        free(temp);
+        SDL_FreeSurface(temp);
     }
 }
 
 static inline void cdlv_scene_clean(cdlv_scene* scene) {
-    for(size_t i=0; i<scene->image_count; ++i)
+    for(size_t i=0; i<scene->image_count; ++i) {
         SDL_FreeSurface(scene->images[i]);
+        scene->images[i] = NULL;
+    }
     free(scene->images);
     scene->images = NULL;
 }
