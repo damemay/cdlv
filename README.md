@@ -16,12 +16,12 @@ The goal is to create as lowest resource usage engine as possible. This is why t
   
 ##### example.adv
 ```
-640 480 3
+640 480 3 res/
 
 !scene
   !bg
-    res/cloudy_sky.png
-    res/black.png
+    cloudy_sky.png
+    black.png
   !script
     "I don't like rainy days. I hope it will get sunnier soon."
     @image 1
@@ -29,20 +29,20 @@ The goal is to create as lowest resource usage engine as possible. This is why t
 
 !scene
   !anim_once
-    res/anim/frame0.jpg
-    res/anim/frame1.jpg
-    res/anim/frame2.jpg
-    res/anim/frame3.jpg
-    res/anim/frame4.jpg
-    res/anim/frame5.jpg
-    res/anim/frame6.jpg
-    res/anim/frame7.jpg
-    res/anim/frame8.jpg
-    res/anim/frame9.jpg
+    anim/frame0.jpg
+    anim/frame1.jpg
+    anim/frame2.jpg
+    anim/frame3.jpg
+    anim/frame4.jpg
+    anim/frame5.jpg
+    anim/frame6.jpg
+    anim/frame7.jpg
+    anim/frame8.jpg
+    anim/frame9.jpg
 
 !scene
   !bg
-    res/sunny_sky.png
+    sunny_sky.png
   !script
     "Ah, it's the sun!"
 ```

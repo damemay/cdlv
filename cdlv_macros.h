@@ -7,6 +7,7 @@
 #define cdlv_log(msg) printf("cdlv: " msg "\n")
 
 #define cdlv_max_string_size    5120
+#define cdlv_small_string       1024
 #define cdlv_max_choice_count   10
 #define cdlv_max_menu_entries   20
 

@@ -75,6 +75,32 @@ static inline void count_scene_data(cdlv_base* base, char* const* file, const si
     #undef cdlv_temp_scene
 }
 
+static inline int dup_script_line(const char* line, cdlv_scene* scene, size_t* index) {
+    size_t w_space = 0;
+    size_t str_size = 0;
+
+    if(!(w_space = whitespace_check(line))) return 0;
+    str_size = (strlen(line+w_space)+1);
+
+    cdlv_duplicate_string(&scene->script[*index], line+w_space, str_size);
+    ++(*index);
+    return 1;
+}
+
+static inline int dup_image_path(const char* line, const char* path, cdlv_scene* scene, size_t* index) {
+    size_t w_space = 0;
+    size_t str_size = 0;
+
+    if(!(w_space = whitespace_check(line))) return 0;
+    str_size = (strlen(line+w_space)+strlen(path)+3);
+    char str[str_size];
+    sprintf(str, "%s%s", path, line+w_space); \
+    cdlv_duplicate_string(&scene->image_paths[*index], str, str_size);
+
+    ++(*index);
+    return 1;
+}
+
 static inline void copy_scene_data(cdlv_base* base, char* const* file, const size_t line_count) {
     cdlv_type parse_m = cdlv_none;
     size_t scene_idx = 0;
@@ -83,17 +109,9 @@ static inline void copy_scene_data(cdlv_base* base, char* const* file, const siz
 
     #define cdlv_temp_scene base->scenes[scene_idx-1]
     #define cdlv_data_alloc(arr_name, count_name) \
-    parse_m = check_tag(file[i]); \
-    cdlv_alloc_ptr_arr(&cdlv_temp_scene->arr_name, cdlv_temp_scene->count_name, char*)
-
-    #define cdlv_data_dup(arr_name, index) \
-    if(!(w_space = whitespace_check(file[i]))) continue; \
-    str_size = (strlen(file[i]+w_space)+1); \
-    cdlv_duplicate_string(&cdlv_temp_scene->arr_name[index], file[i]+w_space, str_size); \
-    ++index
+        parse_m = check_tag(file[i]); \
+        cdlv_alloc_ptr_arr(&cdlv_temp_scene->arr_name, cdlv_temp_scene->count_name, char*)
     for(size_t i=0; i<line_count; ++i) {
-        size_t w_space = 0;
-        size_t str_size = 0;
         switch(check_tag(file[i])) {
             case cdlv_scene_decl:
                 ++scene_idx; image_idx = 0; line_idx = 0; break;
@@ -104,13 +122,16 @@ static inline void copy_scene_data(cdlv_base* base, char* const* file, const siz
             case cdlv_none: switch(parse_m) {
                 case cdlv_static_scene: case cdlv_anim_once_scene:
                 case cdlv_anim_wait_scene: case cdlv_anim_text_scene:
-                case cdlv_anim_scene: cdlv_data_dup(image_paths, image_idx); break;
-                case cdlv_script: cdlv_data_dup(script, line_idx); break;
+                case cdlv_anim_scene: 
+                    if(!dup_image_path(file[i], base->canvas->path, cdlv_temp_scene, &image_idx)) continue;
+                    break;
+                case cdlv_script:
+                    if(!dup_script_line(file[i], cdlv_temp_scene, &line_idx)) continue;
+                    break;
                 case cdlv_none: case cdlv_scene_decl: break;
             }
         }
     }
-    #undef cdlv_data_dup
     #undef cdlv_data_alloc
     #undef cdlv_temp_scene
 }
@@ -119,11 +140,12 @@ void cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
     size_t lines;
     char** script = cdlv_read_file_in_lines(file, &lines);
     size_t canvas_w, canvas_h, framerate;
-    if(!sscanf(script[0], "%lu %lu %lu",
-                &canvas_w, &canvas_h, &framerate))
+    char path[cdlv_small_string];
+    if(!sscanf(script[0], "%lu %lu %lu %s",
+                &canvas_w, &canvas_h, &framerate, path))
         cdlv_diev("Wrong data on the first line: %s", script[0]);
 
-    cdlv_canvas_create(base, canvas_w, canvas_h, framerate, r);
+    cdlv_canvas_create(base, path, canvas_w, canvas_h, framerate, r);
     cdlv_text_create(base, base->config->text_font, base->config->text_size,
             base->config->text_wrap,
             base->config->text_xy.x, base->config->text_xy.y,

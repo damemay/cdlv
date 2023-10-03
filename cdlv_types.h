@@ -54,6 +54,8 @@ typedef struct cdlv_canvas {
     void* raw_pixels;
     uint8_t framerate;
 
+    char path[cdlv_small_string];
+
     uint16_t iter;
     bool changing;
 } cdlv_canvas;
@@ -88,7 +90,7 @@ typedef struct cdlv_vec2 {
 } cdlv_vec2;
 
 typedef struct cdlv_config {
-    char text_font[1024];
+    char text_font[cdlv_small_string];
     uint8_t text_size;
     cdlv_vec2 text_xy;
     uint16_t text_wrap;

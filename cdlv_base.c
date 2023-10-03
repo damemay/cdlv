@@ -14,14 +14,14 @@ void cdlv_config_from_file(cdlv_config* c, const char* path) {
     size_t lines;
     char** file = cdlv_read_file_in_lines(path, &lines);
 
-    char name[1024];
-    char value[1024];
+    char name[cdlv_small_string];
+    char value[cdlv_small_string];
 
     for(size_t i=0; i<lines; ++i) {
         if(!sscanf(file[i], "%s %s", name, value))
             cdlv_diev("Config error on line: %s", file[i]);
 
-        if(!strcmp(name, "text_font"))          strncpy(c->text_font, value, 1023);
+        if(!strcmp(name, "text_font"))          strncpy(c->text_font, value, cdlv_small_string-1);
         else if(!strcmp(name, "text_size"))     c->text_size = atoi(value);
         else if(!strcmp(name, "text_x"))        c->text_xy.x = atoi(value);
         else if(!strcmp(name, "text_y"))        c->text_xy.y = atoi(value);
