@@ -10,7 +10,7 @@ static inline void cdlv_canvas_lock(cdlv_canvas* canvas) {
         if(SDL_LockTexture(canvas->tex,
             NULL, &canvas->raw_pixels,
             &canvas->raw_pitch) != 0)
-                cdlv_diev("Could not lock texture: %s", SDL_GetError());
+                cdlv_logv("Could not lock texture: %s", SDL_GetError());
 }
 
 static inline void cdlv_canvas_unlock(cdlv_canvas* canvas) {
