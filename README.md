@@ -51,7 +51,7 @@ The goal was to create as lowest resource usage engine as possible. This is why 
 #include "cdlv.h"
 
 int main() {
-    // SDL initialization can be done with provided wrapper or preferred way.
+    // Initialize SDL2, SDL2_image and SDL2_ttf.
     sdl_base* sdl = sdl_create("sample", 640, 480);
 
     cdlv_config config = {
