@@ -49,7 +49,7 @@ typedef struct cdlv_scene {
 
 typedef struct cdlv_canvas {
     SDL_Texture* tex;
-    size_t w, h;
+    uint16_t w, h;
     int raw_pitch;
     void* raw_pixels;
     uint8_t framerate;
