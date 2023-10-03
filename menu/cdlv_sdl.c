@@ -1,5 +1,4 @@
-#include "cdlv.h"
-#include "cdlv_util.h"
+#include "cdlv_menu.h"
 
 static inline void sdl_init(const char* title,
         const size_t w, const size_t h,

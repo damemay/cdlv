@@ -1,15 +1,21 @@
 #include "cdlv.h"
 #include "cdlv_util.h"
 
-void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
+int cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
     base->canvas = malloc(sizeof(cdlv_canvas));
-    if(!base->canvas)
-        cdlv_die("Could not allocate memory for cdlv_canvas!");
+    if(!base->canvas) {
+        cdlv_log("Could not allocate memory for cdlv_canvas!");
+        return -1;
+    }
+
     base->canvas->tex = NULL;
     base->canvas->tex = SDL_CreateTexture(*r,
             SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
-    if(!base->canvas->tex)
-        cdlv_diev("Could not create streaming texture: %s", SDL_GetError());
+    if(!base->canvas->tex) {
+        cdlv_logv("Could not create streaming texture: %s", SDL_GetError());
+        return -1;
+    }
+
     base->canvas->w = w;
     base->canvas->h = h;
     base->canvas->raw_pitch = 0;
@@ -18,40 +24,57 @@ void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const s
     base->canvas->iter = 0;
     if(base->config->dissolve_speed) base->canvas->changing = true;
     else base->canvas->changing = false;
+
+    return 0;
 }
 
-static inline void cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
+static inline int cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
     cdlv_alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
     for(size_t i=0; i<scene->image_count; ++i) {
         SDL_Surface* temp = NULL;
         temp = IMG_Load(scene->image_paths[i]);
-        if(!temp)
-            cdlv_diev("Could not load image "
-            "with path \"%s\": %s", scene->image_paths[i], SDL_GetError());
+        if(!temp) {
+            cdlv_logv("Could not load image "
+                "with path \"%s\": %s", scene->image_paths[i], SDL_GetError());
+            return -1;
+        }
 
         if(temp->w < canvas->w && temp->h < canvas->h) {
             SDL_Surface* scaled = NULL;
             scaled = SDL_CreateRGBSurfaceWithFormat(temp->flags, canvas->w, canvas->h,
                     temp->format->BitsPerPixel, temp->format->format);
-            if(!scaled)
-                cdlv_diev("Could not scale surface: %s", SDL_GetError());
-            if(SDL_BlitScaled(temp, NULL, scaled, NULL) < 0)
-                cdlv_diev("Could not blit scaled surface: %s", SDL_GetError());
+            if(!scaled) {
+                cdlv_logv("Could not scale surface: %s", SDL_GetError());
+                return -1;
+            }
+
+            if(SDL_BlitScaled(temp, NULL, scaled, NULL) < 0) {
+                cdlv_logv("Could not blit scaled surface: %s", SDL_GetError());
+                return -1;
+            }
             SDL_FreeSurface(temp);
             temp = scaled;
         }
 
         scene->images[i] = NULL;
         scene->images[i] = SDL_ConvertSurfaceFormat(temp, SDL_PIXELFORMAT_RGBA32, 0);
-        if(!scene->images[i])
-            cdlv_diev("Could not convert surfaces "
-            "when handling image with path "
-            "\"%s\": %s", scene->image_paths[i], SDL_GetError());
-        if(SDL_SetSurfaceBlendMode(scene->images[i], SDL_BLENDMODE_BLEND) < 0)
-            cdlv_diev("Could not set alpha blending on image with path \"%s\": %s",
+        if(!scene->images[i]) {
+            cdlv_logv("Could not convert surfaces "
+                "when handling image with path "
+                "\"%s\": %s", scene->image_paths[i], SDL_GetError());
+            return -1;
+        }
+
+        if(SDL_SetSurfaceBlendMode(scene->images[i], SDL_BLENDMODE_BLEND) < 0) {
+            cdlv_logv("Could not set alpha blending on image with path \"%s\": %s",
                 scene->image_paths[i], SDL_GetError());
+            return -1;
+        }
+
         SDL_FreeSurface(temp);
     }
+
+    return 0;
 }
 
 static inline void cdlv_scene_clean(cdlv_scene* scene) {

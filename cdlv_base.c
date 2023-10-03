@@ -10,7 +10,7 @@ static inline void config_init(cdlv_config* config) {
     if(!config->text_color.a) config->text_color.a = 255;
 }
 
-void cdlv_config_from_file(cdlv_config* c, const char* path) {
+int cdlv_config_from_file(cdlv_config* c, const char* path) {
     size_t lines;
     char** file = cdlv_read_file_in_lines(path, &lines);
 
@@ -18,8 +18,10 @@ void cdlv_config_from_file(cdlv_config* c, const char* path) {
     char value[cdlv_small_string];
 
     for(size_t i=0; i<lines; ++i) {
-        if(!sscanf(file[i], "%s %s", name, value))
-            cdlv_diev("Config error on line: %s", file[i]);
+        if(!sscanf(file[i], "%s %s", name, value)) {
+            cdlv_logv("Config error on line: %s", file[i]);
+            return -1;
+        }
 
         if(!strcmp(name, "text_font"))          strncpy(c->text_font, value, cdlv_small_string-1);
         else if(!strcmp(name, "text_size"))     c->text_size = atoi(value);
@@ -36,13 +38,16 @@ void cdlv_config_from_file(cdlv_config* c, const char* path) {
     }
 
     cdlv_free_file_in_lines(file, lines);
+    return 0;
 }
 
 cdlv_base* cdlv_create(cdlv_config* config) {
     cdlv_base* base = NULL;
     base = malloc(sizeof(cdlv_base));
-    if(!base)
-        cdlv_die("Could not allocate memory for cdlv_base!");
+    if(!base) {
+        cdlv_log("Could not allocate memory for cdlv_base!");
+        return NULL;
+    }
 
     config_init(config);
 
@@ -70,13 +75,16 @@ cdlv_base* cdlv_create(cdlv_config* config) {
 cdlv_base* cdlv_init_from_script(cdlv_config* config, const char* path, SDL_Renderer** r) {
     cdlv_base* base = NULL;
     base = cdlv_create(config);
+    if(!base) return NULL;
+
     base->state = cdlv_main_run;
-    cdlv_read_file(base, path, r);
+    if(cdlv_read_file(base, path, r) < 0) return NULL;
+
     cdlv_start(base);
     return base;
 }
 
-void cdlv_clean_scenes(cdlv_base* base) {
+static inline void cdlv_clean_scenes(cdlv_base* base) {
     if(base->scenes) {
         for(size_t i=0; i<base->scene_count; ++i)
             if(base->scenes[i]) {
@@ -105,7 +113,7 @@ void cdlv_clean_scenes(cdlv_base* base) {
     }
 }
 
-void cdlv_clean_canvas(cdlv_base* base) {
+static inline void cdlv_clean_canvas(cdlv_base* base) {
     if(base->canvas) {
         SDL_DestroyTexture(base->canvas->tex);
         if(base->canvas->raw_pixels) free(base->canvas->raw_pixels);

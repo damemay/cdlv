@@ -125,6 +125,7 @@ static inline void dissolve_and_free_prev_scene(cdlv_base* base) {
             else {
                 base->canvas->changing=false;
                 SDL_FreeSurface(base->scenes[base->p_scene]->images[base->scenes[base->p_scene]->image_count-1]);
+                base->scenes[base->p_scene]->images[base->scenes[base->p_scene]->image_count-1] = NULL;
                 free(base->scenes[base->p_scene]->images);
                 base->scenes[base->p_scene]->images = NULL;
             }

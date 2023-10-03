@@ -1,11 +1,13 @@
 #include "cdlv.h"
 #include "cdlv_util.h"
 
-static inline void text_font_create(cdlv_text* text, bool bg, const char* path, SDL_Renderer* renderer) {
+static inline int text_font_create(cdlv_text* text, bool bg, const char* path, SDL_Renderer* renderer) {
     text->font = TTF_OpenFont(path, text->font_size);
-    if(!text->font)
-        cdlv_diev("Could not create font from file at path: "
-        "\"%s\": %s", path, SDL_GetError());
+    if(!text->font) {
+        cdlv_logv("Could not create font from file at path: "
+            "\"%s\": %s", path, SDL_GetError());
+        return -1;
+    }
 
     SDL_Surface* s = NULL;
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -15,7 +17,10 @@ static inline void text_font_create(cdlv_text* text, bool bg, const char* path, 
     s = SDL_CreateRGBSurface(0, cdlv_font_atlas_size, cdlv_font_atlas_size,
             32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 #endif
-    if(!s) cdlv_diev("Could not create surface for font atlas: %s", SDL_GetError());
+    if(!s) {
+        cdlv_logv("Could not create surface for font atlas: %s", SDL_GetError());
+        return -1;
+    }
 
     cdlv_alloc_ptr_arr(&text->glyphs, cdlv_ascii_count, SDL_Rect);
 
@@ -26,7 +31,11 @@ static inline void text_font_create(cdlv_text* text, bool bg, const char* path, 
             g = TTF_RenderGlyph32_Shaded(text->font, i, text->color, text->bg);
         else
             g = TTF_RenderGlyph32_Blended(text->font, i, text->color);
-        if(!g) cdlv_diev("Could not render glyph: %s", TTF_GetError());
+        if(!g) {
+            cdlv_logv("Could not render glyph: %s", TTF_GetError());
+            return -1;
+        }
+
         SDL_SetSurfaceBlendMode(g, SDL_BLENDMODE_NONE);
 
         int minx = 0;
@@ -40,8 +49,10 @@ static inline void text_font_create(cdlv_text* text, bool bg, const char* path, 
         if(dest.x + dest.w >= cdlv_font_atlas_size) {
             dest.x = 0;
             dest.y = dest.h + TTF_FontLineSkip(text->font);
-            if(dest.y + dest.h >= cdlv_font_atlas_size)
-                cdlv_die("Out of font atlas space");
+            if(dest.y + dest.h >= cdlv_font_atlas_size) {
+                cdlv_log("Out of font atlas space");
+                return -1;
+            }
         }
 
         SDL_BlitSurface(g, NULL, s, &dest);
@@ -53,20 +64,28 @@ static inline void text_font_create(cdlv_text* text, bool bg, const char* path, 
         dest.x += dest.w;
     }
     text->tex = SDL_CreateTextureFromSurface(renderer, s);
-    if(!text->tex) cdlv_diev("Could not convert surface to texture: %s", SDL_GetError());
+    if(!text->tex) {
+        cdlv_logv("Could not convert surface to texture: %s", SDL_GetError());
+        return -1;
+    }
+
     text->w = s->w;
     text->h = s->h;
     SDL_FreeSurface(s);
+    return 0;
 }
 
-void cdlv_text_create(cdlv_base* base, const char* path,
+int cdlv_text_create(cdlv_base* base, const char* path,
         const size_t size, const uint32_t wrap,
         const size_t x, const size_t y,
         const uint8_t r, const uint8_t g, const uint8_t b,
         const uint8_t a, SDL_Renderer* renderer) {
     base->text = malloc(sizeof(cdlv_text));
-    if(!base->text)
-        cdlv_die("Could not allocate memory for cdlv_text!");
+    if(!base->text) {
+        cdlv_log("Could not allocate memory for cdlv_text!");
+        return -1;
+    }
+
     base->text->font = NULL;
     base->text->glyphs = NULL;
     base->text->tex = NULL;
@@ -89,6 +108,8 @@ void cdlv_text_create(cdlv_base* base, const char* path,
     base->text->content_size = 0;
     base->text->accum = 0.0f;
     text_font_create(base->text, base->config->text_render_bg, path, renderer);
+
+    return 0;
 }
 
 static inline void cdlv_text_type(cdlv_base* base) {

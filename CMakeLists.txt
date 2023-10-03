@@ -123,7 +123,6 @@ else()
         cdlv_render.c
         cdlv_choice.c
         cdlv_util.c
-        cdlv_sdl.c
     )
 
     set(EXEC_NAME cdlv-menu)
@@ -132,11 +131,13 @@ else()
 	    add_executable(${EXEC_NAME} WIN32
 		    menu/main.c
 		    menu/cdlv_menu.c
+                    menu/cdlv_sdl.c
             )
     else()
 	    add_executable(${EXEC_NAME}
 		menu/main.c
 		menu/cdlv_menu.c
+                menu/cdlv_sdl.c
 	    )
     endif()
     

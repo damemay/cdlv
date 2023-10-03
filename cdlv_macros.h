@@ -34,7 +34,7 @@
 {                                               \
     *dest = calloc(size, sizeof(char));         \
     if(!dest)                                   \
-        cdlv_die("Could not "                   \
+        cdlv_log("Could not "                   \
         "allocate destination for "             \
         "string duplication!");                 \
     strcpy(*dest, src);                         \
@@ -43,7 +43,7 @@
 {                                                       \
     *arr_ptr = calloc(count, sizeof(size_type));        \
     if(!*arr_ptr)                                       \
-        cdlv_die("Could not allocate "                  \
+        cdlv_log("Could not allocate "                  \
         "memory for array!");                           \
 }
 

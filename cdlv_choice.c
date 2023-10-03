@@ -1,10 +1,12 @@
 #include "cdlv.h"
 #include "cdlv_util.h"
 
-void cdlv_choice_create(cdlv_base* base) {
+int cdlv_choice_create(cdlv_base* base) {
     base->choice = malloc(sizeof(cdlv_choice));
-    if(!base->choice)
-        cdlv_die("Could not allocate memory for a new scripted choice!");
+    if(!base->choice) {
+        cdlv_log("Could not allocate memory for a new scripted choice!");
+        return -1;
+    }
 
     base->choice->count               = 0;
     base->choice->current             = 0;
@@ -15,6 +17,8 @@ void cdlv_choice_create(cdlv_base* base) {
     cdlv_alloc_ptr_arr(&base->choice->destinations, cdlv_max_choice_count, size_t);
     cdlv_alloc_ptr_arr(&base->choice->options, cdlv_max_choice_count, char*);
     cdlv_alloc_ptr_arr(&base->choice->prompt, cdlv_max_string_size, char);
+    
+    return 0;
 }
 
 static inline void cdlv_choice_clean(cdlv_base* base) {

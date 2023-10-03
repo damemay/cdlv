@@ -113,14 +113,4 @@ typedef struct cdlv_base {
     bool can_interact;
 } cdlv_base;
 
-typedef struct sdl_base {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_GameController** gamepads;
-    SDL_Event event;
-    int run;
-    uint16_t w, h;
-    const char* title;
-} sdl_base;
-
 #endif
