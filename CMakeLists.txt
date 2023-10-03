@@ -13,7 +13,7 @@ if(VITA)
     set(VITA_TITLEID  "CDLV07777")
     set(VITA_VERSION  "01.00")
     
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c17")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c17 -O2")
     
     set(VITA_MKSFOEX_FLAGS "${VITA_MKSFOEX_FLAGS} -d ATTRIBUTE2=12")
     
@@ -110,7 +110,7 @@ else()
     set(CMAKE_C_COMPILER gcc)
     set(CMAKE_C_STANDARD 17)
     
-    add_compile_options(-g)
+    add_compile_options(-O2)
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
         add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
     endif()

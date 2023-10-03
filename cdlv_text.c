@@ -111,7 +111,7 @@ void cdlv_text_update(cdlv_base* base, const char* content) {
     base->text->content_size = strlen(content) + 1;
     if(base->text->content_size) {
         if(base->text->content_size > cdlv_max_string_size)
-            strncpy(base->text->content, content, cdlv_max_string_size);
+            strncpy(base->text->content, content, cdlv_max_string_size-1);
         else {
             memset(base->text->content, 0, cdlv_max_string_size);
             strcpy(base->text->content, content);
@@ -128,7 +128,7 @@ static inline void text_draw_line(cdlv_text* text, size_t x, size_t y, const cha
     size_t length = strlen(line);
     SDL_Rect dest = {0, 0, 0, 0};
     for(size_t i=0; i<length; i++) {
-        char c = line[i];
+        unsigned char c = line[i];
         dest.x = x;
         dest.y = y;
         dest.w = text->glyphs[c].w;

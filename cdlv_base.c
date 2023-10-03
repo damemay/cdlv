@@ -2,7 +2,7 @@
 #include "cdlv_util.h"
 
 static inline void config_init(cdlv_config* config) {
-    if(!config->text_font) strcpy(config->text_font, "../res/fonts/roboto.ttf");
+    if(!config->text_font[0]) strcpy(config->text_font, "../res/fonts/roboto.ttf");
     if(!config->text_size) config->text_size = 32;
     if(!config->text_wrap) config->text_wrap = 900;
     if(!config->text_xy.x) config->text_xy.x = 50;
@@ -65,7 +65,7 @@ cdlv_base* cdlv_create(cdlv_config* config) {
 
 
     return base;
-};
+}
 
 cdlv_base* cdlv_init_from_script(cdlv_config* config, const char* path, SDL_Renderer** r) {
     cdlv_base* base = NULL;

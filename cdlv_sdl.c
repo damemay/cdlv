@@ -18,7 +18,7 @@ static inline void sdl_init(const char* title,
                     SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC)))
         cdlv_diev("Could not create SDL_Renderer: %s", SDL_GetError());
 
-    if(!(IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG) & IMG_INIT_JPG | IMG_INIT_PNG))
+    if(!(IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG) & (IMG_INIT_JPG | IMG_INIT_PNG)))
         cdlv_diev("Could not init SDL_image: %s", IMG_GetError());
     atexit(IMG_Quit);
 
