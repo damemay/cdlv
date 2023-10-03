@@ -87,7 +87,7 @@ int main() {
 - First line **must** contain data for the whole .adv file:
 
   ```
-  [images width] [images height] [framerate for animations]
+  [images width] [images height] [framerate for animations] [path to images]
   ```
 - Each scene **must** be declared with tag: `!scene`
 - Right below it should be one of the tags defining scene type:
