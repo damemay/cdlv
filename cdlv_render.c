@@ -170,11 +170,14 @@ void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
         if(base->c_image != cdlv_temp_scene->image_count-1) {
             cdlv_anim(base, cdlv_temp_scene);
         } else {
-            base->can_interact = true;
-            if(cdlv_temp_scene->type == cdlv_anim_once_scene)
+            if(cdlv_temp_scene->type == cdlv_anim_once_scene) {
+                base->can_interact = true;
                 cdlv_update(base);
-            else if(cdlv_temp_scene->type == cdlv_anim_wait_scene)
-                cdlv_text_update(base, cdlv_continue);
+            } else if(cdlv_temp_scene->type == cdlv_anim_wait_scene) {
+                if(!base->can_interact)
+                    cdlv_text_update(base, cdlv_continue);
+                base->can_interact = true;
+            }
         }
     }
     SDL_RenderCopy(*r, base->canvas->tex, NULL, NULL);
