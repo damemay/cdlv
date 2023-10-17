@@ -111,6 +111,7 @@ typedef struct cdlv_base {
     uint8_t c_line, c_scene, p_scene, c_image;
     float accum;
     bool can_interact;
+    bool finished;
 } cdlv_base;
 
 #endif

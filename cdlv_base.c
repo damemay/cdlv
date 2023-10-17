@@ -67,7 +67,7 @@ cdlv_base* cdlv_create(cdlv_config* config) {
     base->accum         = 0.0f;
     base->can_interact  = true;
     base->state         = cdlv_main_menu;
-
+    base->finished      = false;
 
     return base;
 }

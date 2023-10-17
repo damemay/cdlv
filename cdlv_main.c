@@ -110,6 +110,8 @@ void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
                 cdlv_scene_clean_leave_last(base->scenes[prev]);
             else cdlv_scene_clean(base->scenes[prev]);
         }
+    } else {
+        base->finished = true;
     }
 }
 
