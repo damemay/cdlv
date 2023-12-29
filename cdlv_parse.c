@@ -6,7 +6,7 @@
 static inline void scenes_alloc(cdlv_base* base, const size_t count) {
     base->scenes = calloc(count, sizeof(cdlv_scene));
     if(!base->scenes) {
-        cdlv_log("Could not allocate memory for scene list!");
+        sprintf(base->log, "Could not allocate memory for scene list!");
         base->error = cdlv_no_mem_err;
         return;
     }
@@ -14,7 +14,7 @@ static inline void scenes_alloc(cdlv_base* base, const size_t count) {
     for(size_t i=0; i<count; ++i) {
         base->scenes[i] = malloc(sizeof(cdlv_scene));
         if(!base->scenes[i]) {
-            cdlv_logv("Could not allocate memory for scene: %lu", i);
+            sprintf(base->log, "Could not allocate memory for scene: %lu", i);
             base->error = cdlv_no_mem_err;
             return;
         }
@@ -156,7 +156,7 @@ int cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
     char path[cdlv_small_string];
     if(!sscanf(script[0], "%lu %lu %lu %s",
                 &canvas_w, &canvas_h, &framerate, path)) {
-        cdlv_logv("Wrong data on the first line: %s", script[0]);
+        sprintf(base->log, "Wrong data on the first line: %s", script[0]);
         base->error = cdlv_script_err;
         return -1;
     }

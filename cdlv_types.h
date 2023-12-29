@@ -122,6 +122,7 @@ typedef struct cdlv_base {
     bool can_interact;
     bool finished;
     cdlv_error error;
+    char log[cdlv_max_string_size];
 } cdlv_base;
 
 #endif

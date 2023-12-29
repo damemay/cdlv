@@ -4,7 +4,7 @@
 int cdlv_choice_create(cdlv_base* base) {
     base->choice = malloc(sizeof(cdlv_choice));
     if(!base->choice) {
-        cdlv_log("Could not allocate memory for a new scripted choice!");
+        sprintf(base->log, "Could not allocate memory for a new scripted choice!");
         return -1;
     }
 

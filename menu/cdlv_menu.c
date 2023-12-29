@@ -75,19 +75,17 @@ void cdlv_menu_clean(cdlv_menu* menu) {
 
 int check_errors(cdlv_base* base, cdlv_error err) {
     if(err == cdlv_no_err) return 0;
-    char content[cdlv_max_string_size];
     switch(err) {
         case cdlv_config_err:
-            cdlv_text_update(base, "ERROR: Syntax error inside config file!"); return -1;
+            cdlv_text_update(base, base->log); return -1;
         case cdlv_no_mem_err:
-            cdlv_text_update(base, "ERROR: No available memory for allocation of new data!"); return -1;
+            cdlv_text_update(base, base->log); return -1;
         case cdlv_file_err:
-            cdlv_text_update(base, "ERROR: Wrong file paths provided!"); return -1;
+            cdlv_text_update(base, base->log); return -1;
         case cdlv_script_err:
-            cdlv_text_update(base, "ERROR: Syntax error inside script file!"); return -1;
+            cdlv_text_update(base, base->log); return -1;
         case cdlv_sdl_err:
-            sprintf(content, "ERROR: SDL returned error: %s", SDL_GetError());
-            cdlv_text_update(base, content); return -1;
+            cdlv_text_update(base, base->log); return -1;
         default:return -1;
     }
 }

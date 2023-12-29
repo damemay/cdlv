@@ -82,7 +82,7 @@ void cdlv_text_create(cdlv_base* base, const char* path,
         const uint8_t a, SDL_Renderer* renderer) {
     base->text = malloc(sizeof(cdlv_text));
     if(!base->text) {
-        cdlv_log("Could not allocate memory for cdlv_text!");
+        sprintf(base->log, "Could not allocate memory for cdlv_text!");
         base->error = cdlv_no_mem_err;
         return;
     }
@@ -172,7 +172,7 @@ static inline void text_draw_wrap(cdlv_text* text, SDL_Renderer* renderer) {
     for(size_t i=0; i<length; i++) {
         char c = text->content[i];
         word_w += text->glyphs[c].w;
-        if(c != ' ' && c != '\n') word[n++] = c;
+        if(c != ' ' && (c != '\n' || c != '\r')) word[n++] = c;
         if(c == ' ' || i == length-1) {
             if(line_w + word_w >= text->wrap) {
                 text_draw_line(text, x, y, line, renderer);
