@@ -1,11 +1,14 @@
 #include "cdlv.h"
+#include "cdlv_macros.h"
+#include "cdlv_types.h"
 #include "cdlv_util.h"
 
-int cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
+void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
     base->canvas = malloc(sizeof(cdlv_canvas));
     if(!base->canvas) {
         cdlv_log("Could not allocate memory for cdlv_canvas!");
-        return -1;
+        base->error = cdlv_no_mem_err;
+        return;
     }
 
     base->canvas->tex = NULL;
@@ -13,7 +16,8 @@ int cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const si
             SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
     if(!base->canvas->tex) {
         cdlv_logv("Could not create streaming texture: %s", SDL_GetError());
-        return -1;
+        base->error = cdlv_sdl_err;
+        return;
     }
 
     base->canvas->w = w;
@@ -24,11 +28,9 @@ int cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const si
     base->canvas->iter = 0;
     if(base->config->dissolve_speed) base->canvas->changing = true;
     else base->canvas->changing = false;
-
-    return 0;
 }
 
-static inline int cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
+static inline void cdlv_load_images(cdlv_base* base, cdlv_canvas* canvas, cdlv_scene* scene) {
     cdlv_alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
     for(size_t i=0; i<scene->image_count; ++i) {
         SDL_Surface* temp = NULL;
@@ -36,7 +38,8 @@ static inline int cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
         if(!temp) {
             cdlv_logv("Could not load image "
                 "with path \"%s\": %s", scene->image_paths[i], SDL_GetError());
-            return -1;
+            base->error = cdlv_file_err;
+            return;
         }
 
         if(temp->w < canvas->w && temp->h < canvas->h) {
@@ -45,12 +48,14 @@ static inline int cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
                     temp->format->BitsPerPixel, temp->format->format);
             if(!scaled) {
                 cdlv_logv("Could not scale surface: %s", SDL_GetError());
-                return -1;
+                base->error = cdlv_sdl_err;
+                return;
             }
 
             if(SDL_BlitScaled(temp, NULL, scaled, NULL) < 0) {
                 cdlv_logv("Could not blit scaled surface: %s", SDL_GetError());
-                return -1;
+                base->error = cdlv_sdl_err;
+                return;
             }
             SDL_FreeSurface(temp);
             temp = scaled;
@@ -62,19 +67,19 @@ static inline int cdlv_load_images(cdlv_canvas* canvas, cdlv_scene* scene) {
             cdlv_logv("Could not convert surfaces "
                 "when handling image with path "
                 "\"%s\": %s", scene->image_paths[i], SDL_GetError());
-            return -1;
+            base->error = cdlv_sdl_err;
+            return;
         }
 
         if(SDL_SetSurfaceBlendMode(scene->images[i], SDL_BLENDMODE_BLEND) < 0) {
             cdlv_logv("Could not set alpha blending on image with path \"%s\": %s",
                 scene->image_paths[i], SDL_GetError());
-            return -1;
+            base->error = cdlv_sdl_err;
+            return;
         }
 
         SDL_FreeSurface(temp);
     }
-
-    return 0;
 }
 
 static inline void cdlv_scene_clean(cdlv_scene* scene) {
@@ -91,7 +96,7 @@ static inline void cdlv_scene_clean_leave_last(cdlv_scene* scene) {
         SDL_FreeSurface(scene->images[i]);
 }
 
-void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
+int cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
     if(index < base->scene_count) {
         base->canvas->iter = 0;
         if(base->config->dissolve_speed) base->canvas->changing = true;
@@ -100,7 +105,8 @@ void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
         base->p_scene = prev;
         base->c_image = 0;
         base->c_line  = 0;
-        cdlv_load_images(base->canvas, base->scenes[index]);
+        cdlv_load_images(base, base->canvas, base->scenes[index]);
+        cdlv_check_err();
         if(base->scenes[index]->type != cdlv_anim_once_scene && base->scenes[index]->type != cdlv_anim_wait_scene) {
             cdlv_text_update(base, base->scenes[index]->script[base->c_line]);
             base->can_interact = true;
@@ -113,6 +119,7 @@ void cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
     } else {
         base->finished = true;
     }
+    return 0;
 }
 
 static inline bool cdlv_change_image(cdlv_base* base, cdlv_scene* scene, const char* line) {
@@ -252,4 +259,5 @@ void cdlv_loop_end(cdlv_base* base, SDL_Renderer** r) {
 
 void cdlv_start(cdlv_base* base) {
     cdlv_scene_load(base, 0, 0);
+    if(base->error != cdlv_no_err) cdlv_logv("%d", base->error);
 }

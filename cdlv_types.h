@@ -29,6 +29,15 @@ typedef enum {
     cdlv_parsed,
 } cdlv_parse_state;
 
+typedef enum {
+    cdlv_no_err,
+    cdlv_config_err,
+    cdlv_no_mem_err,
+    cdlv_file_err,
+    cdlv_script_err,
+    cdlv_sdl_err,
+} cdlv_error;
+
 typedef struct cdlv_choice {
     uint8_t count;
     uint8_t current;
@@ -112,6 +121,7 @@ typedef struct cdlv_base {
     float accum;
     bool can_interact;
     bool finished;
+    cdlv_error error;
 } cdlv_base;
 
 #endif

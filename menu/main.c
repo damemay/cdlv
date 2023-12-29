@@ -1,5 +1,6 @@
 #include "../cdlv.h"
 #include "cdlv_menu.h"
+#include <stdlib.h>
 
 #define WIDTH  960
 #define HEIGHT 544
@@ -17,8 +18,11 @@ int main(int argc, char* argv[]) {
     sdl_base* sdl = sdl_create(TITLE, WIDTH, HEIGHT);
 
     cdlv_config config = {0};
-    cdlv_config_from_file(&config, argv[1]);
+    if(cdlv_config_from_file(&config, argv[1]) == cdlv_config_err) return EXIT_FAILURE;
+
     cdlv_base* base = cdlv_create(&config);
+    if(!base) return EXIT_FAILURE;
+
     cdlv_menu* menu = NULL;
 
     #ifndef __vita__
@@ -39,7 +43,8 @@ int main(int argc, char* argv[]) {
                 cdlv_menu_render(base, sdl);
                 break;
             case cdlv_main_run:
-                cdlv_loop_start(base, &sdl->event, &sdl->run);
+                if(check_errors(base, base->error) == 0) cdlv_loop_start(base, &sdl->event, &sdl->run);
+                else while(SDL_PollEvent(&sdl->event) != 0) if(sdl->event.type == SDL_QUIT) sdl->run = false;
                 cdlv_render(base, &sdl->renderer);
                 break;
         }

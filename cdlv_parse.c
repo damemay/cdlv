@@ -1,18 +1,22 @@
 #include "cdlv.h"
+#include "cdlv_macros.h"
+#include "cdlv_types.h"
 #include "cdlv_util.h"
 
-static inline int scenes_alloc(cdlv_base* base, const size_t count) {
+static inline void scenes_alloc(cdlv_base* base, const size_t count) {
     base->scenes = calloc(count, sizeof(cdlv_scene));
     if(!base->scenes) {
         cdlv_log("Could not allocate memory for scene list!");
-        return -1;
+        base->error = cdlv_no_mem_err;
+        return;
     }
 
     for(size_t i=0; i<count; ++i) {
         base->scenes[i] = malloc(sizeof(cdlv_scene));
         if(!base->scenes[i]) {
             cdlv_logv("Could not allocate memory for scene: %lu", i);
-            return -1;
+            base->error = cdlv_no_mem_err;
+            return;
         }
         base->scenes[i]->images             = NULL;
         base->scenes[i]->image_paths        = NULL;
@@ -21,8 +25,6 @@ static inline int scenes_alloc(cdlv_base* base, const size_t count) {
         base->scenes[i]->line_count         = 0;
         base->scenes[i]->type               = cdlv_none;
     }
-
-    return 0;
 }
 
 static inline size_t count_scenes(char* const* file, const size_t line_count) {
@@ -145,29 +147,38 @@ static inline void copy_scene_data(cdlv_base* base, const char* path, char* cons
 int cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
     size_t lines;
     char** script = cdlv_read_file_in_lines(file, &lines);
-    if(!script) return -1;
+    if(!script) {
+        base->error = cdlv_file_err;
+        return -1;
+    }
 
     size_t canvas_w, canvas_h, framerate;
     char path[cdlv_small_string];
     if(!sscanf(script[0], "%lu %lu %lu %s",
                 &canvas_w, &canvas_h, &framerate, path)) {
         cdlv_logv("Wrong data on the first line: %s", script[0]);
+        base->error = cdlv_script_err;
         return -1;
     }
 
-    if(cdlv_canvas_create(base, canvas_w, canvas_h, framerate, r) < 0) return -1;
-    if(cdlv_text_create(base, base->config->text_font, base->config->text_size,
+    cdlv_canvas_create(base, canvas_w, canvas_h, framerate, r);
+    cdlv_check_err();
+
+    cdlv_text_create(base, base->config->text_font, base->config->text_size,
             base->config->text_wrap,
             base->config->text_xy.x, base->config->text_xy.y,
             base->config->text_color.r, base->config->text_color.g,
-            base->config->text_color.b, base->config->text_color.a,
-            *r) < 0)
-        return -1;
+            base->config->text_color.b, base->config->text_color.a, *r);
+    cdlv_check_err();
 
     base->scene_count = count_scenes(script, lines);
-    if(scenes_alloc(base, base->scene_count) < 0) return -1;
+    scenes_alloc(base, base->scene_count);
+    cdlv_check_err();
+
     count_scene_data(base, script, lines);
     copy_scene_data(base, path, script, lines);
+    cdlv_check_err();
+
     cdlv_free_file_in_lines(script, lines);
     return 0;
 }

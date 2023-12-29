@@ -30,7 +30,7 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, sdl_base* sdl) {
         struct dirent* entry;
         cdlv_alloc_ptr_arr(&menu->files, cdlv_max_menu_entries, char*);
         while((entry = readdir(dir)) != NULL) {
-            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0 || !strstr(entry->d_name, ".adv"))
                 continue;
             menu->files[menu->file_count] = calloc(strlen(entry->d_name)+1, sizeof(char));
             strcpy(menu->files[menu->file_count], entry->d_name);
@@ -73,21 +73,43 @@ void cdlv_menu_clean(cdlv_menu* menu) {
     free(menu);
 }
 
+int check_errors(cdlv_base* base, cdlv_error err) {
+    if(err == cdlv_no_err) return 0;
+    char content[cdlv_max_string_size];
+    switch(err) {
+        case cdlv_config_err:
+            cdlv_text_update(base, "ERROR: Syntax error inside config file!"); return -1;
+        case cdlv_no_mem_err:
+            cdlv_text_update(base, "ERROR: No available memory for allocation of new data!"); return -1;
+        case cdlv_file_err:
+            cdlv_text_update(base, "ERROR: Wrong file paths provided!"); return -1;
+        case cdlv_script_err:
+            cdlv_text_update(base, "ERROR: Syntax error inside script file!"); return -1;
+        case cdlv_sdl_err:
+            sprintf(content, "ERROR: SDL returned error: %s", SDL_GetError());
+            cdlv_text_update(base, content); return -1;
+        default:return -1;
+    }
+}
+
 static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu, sdl_base* sdl) {
     if((*menu)->current_choice >= 0 && (*menu)->current_choice < (*menu)->file_count) {
         char full_path[strlen((*menu)->path)+strlen((*menu)->files[(*menu)->current_choice])+3];
         sprintf(full_path, "%s/%s", (*menu)->path, (*menu)->files[(*menu)->current_choice]);
         (*base)->config->text_speed = (*menu)->text_speed;
-        cdlv_menu_clean((*menu));
-        *menu = NULL;
         cdlv_config* config = (*base)->config;
+        if(check_errors(*base, (*base)->error) == -1) return;
         cdlv_clean_all((*base));
         *base = NULL;
         *base = cdlv_create(config);
-        (*base)->state = cdlv_main_run;
         cdlv_read_file((*base), full_path, &sdl->renderer);
+        if(check_errors(*base, (*base)->error) == -1) return;
         SDL_SetWindowSize(sdl->window, (*base)->canvas->w, (*base)->canvas->h);
         cdlv_start((*base));
+        if(check_errors(*base, (*base)->error) == -1) return;
+        cdlv_menu_clean((*menu));
+        *menu = NULL;
+        (*base)->state = cdlv_main_run;
     }
 }
 

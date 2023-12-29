@@ -75,7 +75,7 @@ static inline int text_font_create(cdlv_text* text, bool bg, const char* path, S
     return 0;
 }
 
-int cdlv_text_create(cdlv_base* base, const char* path,
+void cdlv_text_create(cdlv_base* base, const char* path,
         const size_t size, const uint32_t wrap,
         const size_t x, const size_t y,
         const uint8_t r, const uint8_t g, const uint8_t b,
@@ -83,7 +83,8 @@ int cdlv_text_create(cdlv_base* base, const char* path,
     base->text = malloc(sizeof(cdlv_text));
     if(!base->text) {
         cdlv_log("Could not allocate memory for cdlv_text!");
-        return -1;
+        base->error = cdlv_no_mem_err;
+        return;
     }
 
     base->text->font = NULL;
@@ -108,8 +109,6 @@ int cdlv_text_create(cdlv_base* base, const char* path,
     base->text->content_size = 0;
     base->text->accum = 0.0f;
     text_font_create(base->text, base->config->text_render_bg, path, renderer);
-
-    return 0;
 }
 
 static inline void cdlv_text_type(cdlv_base* base) {

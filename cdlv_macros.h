@@ -6,6 +6,8 @@
 #define cdlv_logv(msg, ...) printf("cdlv: " msg "\n", __VA_ARGS__)
 #define cdlv_log(msg) printf("cdlv: " msg "\n")
 
+#define cdlv_check_err() if(base->error != cdlv_no_err) return -1;
+
 #define cdlv_max_string_size    5120
 #define cdlv_small_string       1024
 #define cdlv_max_choice_count   10

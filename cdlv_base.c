@@ -10,7 +10,7 @@ static inline void config_init(cdlv_config* config) {
     if(!config->text_color.a) config->text_color.a = 255;
 }
 
-int cdlv_config_from_file(cdlv_config* c, const char* path) {
+cdlv_error cdlv_config_from_file(cdlv_config* c, const char* path) {
     size_t lines;
     char** file = cdlv_read_file_in_lines(path, &lines);
 
@@ -20,7 +20,7 @@ int cdlv_config_from_file(cdlv_config* c, const char* path) {
     for(size_t i=0; i<lines; ++i) {
         if(!sscanf(file[i], "%s %s", name, value)) {
             cdlv_logv("Config error on line: %s", file[i]);
-            return -1;
+            return cdlv_config_err;
         }
 
         if(!strcmp(name, "text_font"))          strncpy(c->text_font, value, cdlv_small_string-1);
@@ -38,7 +38,7 @@ int cdlv_config_from_file(cdlv_config* c, const char* path) {
     }
 
     cdlv_free_file_in_lines(file, lines);
-    return 0;
+    return cdlv_no_err;
 }
 
 cdlv_base* cdlv_create(cdlv_config* config) {
@@ -68,6 +68,7 @@ cdlv_base* cdlv_create(cdlv_config* config) {
     base->can_interact  = true;
     base->state         = cdlv_main_menu;
     base->finished      = false;
+    base->error         = cdlv_no_err;
 
     return base;
 }
@@ -78,7 +79,7 @@ cdlv_base* cdlv_init_from_script(cdlv_config* config, const char* path, SDL_Rend
     if(!base) return NULL;
 
     base->state = cdlv_main_run;
-    if(cdlv_read_file(base, path, r) < 0) return NULL;
+    if(cdlv_read_file(base, path, r) < 0) return base;
 
     cdlv_start(base);
     return base;
