@@ -30,7 +30,7 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, sdl_base* sdl) {
         struct dirent* entry;
         cdlv_alloc_ptr_arr(&menu->files, cdlv_max_menu_entries, char*);
         while((entry = readdir(dir)) != NULL) {
-            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0 || !strstr(entry->d_name, ".adv"))
+            if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0 || !strstr(entry->d_name, ".adv") || strstr(entry->d_name, ".zkt"))
                 continue;
             menu->files[menu->file_count] = calloc(strlen(entry->d_name)+1, sizeof(char));
             strcpy(menu->files[menu->file_count], entry->d_name);

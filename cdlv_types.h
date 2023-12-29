@@ -123,6 +123,9 @@ typedef struct cdlv_base {
     bool finished;
     cdlv_error error;
     char log[cdlv_max_string_size];
+    char* zkt_path;
+    char* zkt_file;
+    size_t zkt_size;
 } cdlv_base;
 
 #endif

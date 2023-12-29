@@ -1,4 +1,5 @@
 #include "cdlv.h"
+#include "zdlv.h"
 #include "cdlv_macros.h"
 #include "cdlv_types.h"
 #include "cdlv_util.h"
@@ -160,6 +161,10 @@ int cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
         base->error = cdlv_script_err;
         return -1;
     }
+
+    base->zkt_path = malloc(strlen(file)+5);
+    sprintf(base->zkt_path, "%s.zkt", file);
+    base->zkt_file = zdlv_read_file(base->zkt_path, &base->zkt_size);
 
     cdlv_canvas_create(base, canvas_w, canvas_h, framerate, r);
     cdlv_check_err();

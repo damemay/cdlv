@@ -133,12 +133,14 @@ else()
 		    menu/main.c
 		    menu/cdlv_menu.c
                     menu/cdlv_sdl.c
+                zocket/zocket.c
             )
     else()
 	    add_executable(${EXEC_NAME}
 		menu/main.c
 		menu/cdlv_menu.c
                 menu/cdlv_sdl.c
+                zocket/zocket.c
 	    )
             add_executable(${ZDLV_NAME}
 		menu/cdlv_menu.c
@@ -167,6 +169,7 @@ else()
             SDL2::SDL2
             SDL2_image
             SDL2_ttf
+            zstd
             ${PROJECT_NAME}
             -fsanitize=address
         )
@@ -186,6 +189,7 @@ else()
 		SDL2_image
 		SDL2
 		SDL2main
+                zstd
 		mingw32
             )
             add_definitions(-DSDL_MAIN_HANDLED)
@@ -194,6 +198,7 @@ else()
                 SDL2::SDL2
                 SDL2_image
                 SDL2_ttf
+                zstd
                 ${PROJECT_NAME}
             )
             target_link_libraries(${ZDLV_NAME}

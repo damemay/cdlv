@@ -2,6 +2,7 @@
 #include "cdlv_util.h"
 #include "menu/cdlv_menu.h"
 #include "zocket/zocket.h"
+#include "zdlv.h"
 
 struct scene_paths {
     char** images;
@@ -12,34 +13,6 @@ struct image {
     char* data;
     size_t size;
 };
-
-static inline char* read_file(const char* path, size_t* buf_size) {
-    FILE* file = fopen(path, "rb");
-    if(!file) {
-        perror("cdlv");
-        return NULL;
-    }
-
-    fseek(file, 0L, SEEK_END);
-    long size = ftell(file);
-    rewind(file);
-
-    char* code = malloc(size+1);
-    if(!code) {
-        fclose(file), cdlv_logv("Could not allocate memory for file: %s", path);
-        return NULL;
-    }
-
-    if(fread(code, size, 1, file) != 1) {
-        fclose(file), free(code), cdlv_logv("Could not read file: %s", path);
-        return NULL;
-    }
-
-    fclose(file);
-    code[size] = '\0';
-    *buf_size = size+1;
-    return code;
-}
 
 static inline void write_file_zkt_data(const char* path, zkt_data* data) {
     FILE* file = fopen(path, "wb");
@@ -56,7 +29,7 @@ static inline zkt_data* pack_scene(struct scene_paths* scene) {
     struct image* images = calloc(scene->image_count, sizeof(struct image));
     for(size_t i=0; i<scene->image_count; i++) {
         size_t size;
-        images[i].data = read_file(scene->images[i], &size);
+        images[i].data = zdlv_read_file(scene->images[i], &size);
         images[i].size = size;
     }
     
@@ -78,11 +51,10 @@ static inline zkt_data* pack_scene(struct scene_paths* scene) {
     for(size_t i=0; i<scene->image_count; i++) {
         memcpy(buffer+offset, "IMG", 3);
         offset += 3;
-        const int n = snprintf(NULL, 0, "%lu", strlen(scene->images[i]));
-        char str[n+1];
-        snprintf(str, n+1, "%lu", strlen(scene->images[i]));
-        memcpy(buffer+offset, str, n);
-        offset += n;
+        char str[5];
+        snprintf(str, 5, "%04lu", strlen(scene->images[i]));
+        memcpy(buffer+offset, str, 4);
+        offset += 4;
         memcpy(buffer+offset, scene->images[i], strlen(scene->images[i]));
         offset += strlen(scene->images[i]);
         memcpy(buffer+offset, images_[i]->buffer, images_[i]->size);
@@ -222,7 +194,6 @@ static int pack_script(const char* file, const char* name) {
         memcpy(buffer+offset, scenes_data[i]->buffer, scenes_data[i]->size);
         offset += scenes_data[i]->size;
     }
-
     memcpy(ret->buffer, buffer, size);
 
     for(size_t i=0; i<scene_count; i++)
@@ -230,11 +201,8 @@ static int pack_script(const char* file, const char* name) {
     free(scenes_data);
     free(buffer);
 
-    zkt_data* compressed = zkt_data_compress(ret->buffer, ret->size, 90);
-
-    write_file_zkt_data(name, compressed);
+    write_file_zkt_data(name, ret);
     zkt_data_clean(ret);
-    zkt_data_clean(compressed);
 
     for(size_t i=0; i<scene_count; i++) {
         for(size_t j=0; j<scenes[i]->image_count; j++) free(scenes[i]->images[j]);

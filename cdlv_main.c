@@ -2,6 +2,8 @@
 #include "cdlv_macros.h"
 #include "cdlv_types.h"
 #include "cdlv_util.h"
+#include "zdlv.h"
+#include <SDL2/SDL_error.h>
 
 void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
     base->canvas = malloc(sizeof(cdlv_canvas));
@@ -32,6 +34,14 @@ void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const s
 
 static inline void cdlv_load_images(cdlv_base* base, cdlv_canvas* canvas, cdlv_scene* scene) {
     cdlv_alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
+
+    size_t count = 0;
+    char* scn = zdlv_get(&base->zkt_file, &base->zkt_size, "SCN");
+    if(!scn) cdlv_log("scn not found");
+    else cdlv_log("scn found");
+
+    free(scn);
+
     for(size_t i=0; i<scene->image_count; ++i) {
         SDL_Surface* temp = NULL;
         temp = IMG_Load(scene->image_paths[i]);
