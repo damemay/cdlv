@@ -126,6 +126,7 @@ else()
     )
 
     set(EXEC_NAME cdlv-menu)
+    set(ZDLV_NAME zdlv-packer)
 
     if(MINGW)
 	    add_executable(${EXEC_NAME} WIN32
@@ -139,6 +140,12 @@ else()
 		menu/cdlv_menu.c
                 menu/cdlv_sdl.c
 	    )
+            add_executable(${ZDLV_NAME}
+		menu/cdlv_menu.c
+                menu/cdlv_sdl.c
+                zdlv.c
+                zocket/zocket.c
+            )
     endif()
     
     if(MINGW)
@@ -149,12 +156,25 @@ else()
         ${SDL2IMAGE_INCLUDE_DIRS}
         ${SDL2TTF_INCLUDE_DIRS}
     )
+    include_directories(${ZDLV_NAME}
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2IMAGE_INCLUDE_DIRS}
+        ${SDL2TTF_INCLUDE_DIRS}
+    )
     
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
         target_link_libraries(${EXEC_NAME}
             SDL2::SDL2
             SDL2_image
             SDL2_ttf
+            ${PROJECT_NAME}
+            -fsanitize=address
+        )
+        target_link_libraries(${ZDLV_NAME}
+            SDL2::SDL2
+            SDL2_image
+            SDL2_ttf
+            zstd
             ${PROJECT_NAME}
             -fsanitize=address
         )
@@ -174,6 +194,13 @@ else()
                 SDL2::SDL2
                 SDL2_image
                 SDL2_ttf
+                ${PROJECT_NAME}
+            )
+            target_link_libraries(${ZDLV_NAME}
+                SDL2::SDL2
+                SDL2_image
+                SDL2_ttf
+                zstd
                 ${PROJECT_NAME}
             )
 	endif()
