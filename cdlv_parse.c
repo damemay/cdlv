@@ -145,13 +145,23 @@ static inline void copy_scene_data(cdlv_base* base, const char* path, char* cons
     #undef cdlv_temp_scene
 }
 
-int cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
-    size_t lines;
-    char** script = cdlv_read_file_in_lines(file, &lines);
-    if(!script) {
-        base->error = cdlv_file_err;
-        return -1;
+static inline char** file_into_lines(char* file, const size_t size, size_t* lines) {
+    char** code = malloc(size+1);
+
+    char* line = strtok(file, "\r\n");
+    size_t i = 0;
+    while(line) {
+        cdlv_duplicate_string(&code[i], line, strlen(line)+1);
+        ++i;
+        line = strtok(NULL, "\r\n");
     }
+    *lines = i;
+    return code;
+}
+
+int cdlv_read_file(cdlv_base* base, char* file, const size_t size, const char* name, SDL_Renderer** r) {
+    size_t lines;
+    char** script = file_into_lines(file, size, &lines);
 
     size_t canvas_w, canvas_h, framerate;
     char path[cdlv_small_string];
@@ -162,9 +172,9 @@ int cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
         return -1;
     }
 
-    base->zkt_path = malloc(strlen(file)-3);
-    strncpy(base->zkt_path, file, strlen(file)-4);
-    base->zkt_path[strlen(file)-4] = '\0';
+    base->zkt_path = malloc(strlen(name)-3);
+    strncpy(base->zkt_path, name, strlen(name)-4);
+    base->zkt_path[strlen(name)-4] = '\0';
 
     cdlv_canvas_create(base, canvas_w, canvas_h, framerate, r);
     cdlv_check_err();

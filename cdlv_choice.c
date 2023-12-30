@@ -1,5 +1,6 @@
 #include "cdlv.h"
 #include "cdlv_util.h"
+#include "zocket/zocket.h"
 
 int cdlv_choice_create(cdlv_base* base) {
     base->choice = malloc(sizeof(cdlv_choice));
@@ -45,15 +46,15 @@ void cdlv_choice_add(cdlv_base* base, const char* line) {
     }
 }
 
-static inline bool cdlv_choice_switch(cdlv_base* base, size_t ch) {
+static inline bool cdlv_choice_switch(cdlv_base* base, size_t ch, zkt_client** client) {
     if(base->choice->destinations[ch]) {
-        cdlv_scene_load(base, base->c_scene, base->choice->destinations[ch]);
+        cdlv_scene_load(base, base->c_scene, base->choice->destinations[ch], client);
         return true;
     }
     return false;
 }
 
-void cdlv_choice_handler(cdlv_base* base, size_t ch) {
-    if(cdlv_choice_switch(base, ch)) cdlv_choice_clean(base);
+void cdlv_choice_handler(cdlv_base* base, size_t ch, zkt_client** client) {
+    if(cdlv_choice_switch(base, ch, client)) cdlv_choice_clean(base);
 }
 

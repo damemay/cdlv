@@ -127,6 +127,7 @@ else()
 
     set(EXEC_NAME cdlv-menu)
     set(ZDLV_NAME zdlv-packer)
+    set(SERV_NAME zdlv-server)
 
     if(MINGW)
 	    add_executable(${EXEC_NAME} WIN32
@@ -147,6 +148,12 @@ else()
                 menu/cdlv_sdl.c
                 zdlv.c
                 zocket/zocket.c
+            )
+        add_executable(${SERV_NAME}
+		menu/cdlv_menu.c
+                menu/cdlv_sdl.c
+                zocket/zocket.c
+                zdlv_s.c
             )
     endif()
     
@@ -181,6 +188,14 @@ else()
             ${PROJECT_NAME}
             -fsanitize=address
         )
+    target_link_libraries(${SERV_NAME}
+            SDL2::SDL2
+            SDL2_image
+            SDL2_ttf
+            zstd
+            ${PROJECT_NAME}
+            -fsanitize=address
+        )
     else()
 	    if(MINGW)
             target_link_libraries(${EXEC_NAME}
@@ -202,6 +217,13 @@ else()
                 ${PROJECT_NAME}
             )
             target_link_libraries(${ZDLV_NAME}
+                SDL2::SDL2
+                SDL2_image
+                SDL2_ttf
+                zstd
+                ${PROJECT_NAME}
+            )
+        target_link_libraries(${SERV_NAME}
                 SDL2::SDL2
                 SDL2_image
                 SDL2_ttf

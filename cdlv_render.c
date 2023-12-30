@@ -147,7 +147,7 @@ static inline void cdlv_anim(cdlv_base* base, cdlv_scene* scene) {
     }
 }
 
-void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
+void cdlv_render(cdlv_base* base, SDL_Renderer** r, zkt_client** client) {
     cdlv_scene* cdlv_temp_scene = base->scenes[base->c_scene];
     SDL_RenderClear(*r);
     if(cdlv_temp_scene->type == cdlv_static_scene) {
@@ -172,7 +172,7 @@ void cdlv_render(cdlv_base* base, SDL_Renderer** r) {
         } else {
             if(cdlv_temp_scene->type == cdlv_anim_once_scene) {
                 base->can_interact = true;
-                cdlv_update(base);
+                cdlv_update(base, client);
             } else if(cdlv_temp_scene->type == cdlv_anim_wait_scene) {
                 if(!base->can_interact)
                     cdlv_text_update(base, cdlv_continue);

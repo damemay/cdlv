@@ -73,18 +73,6 @@ cdlv_base* cdlv_create(cdlv_config* config) {
     return base;
 }
 
-cdlv_base* cdlv_init_from_script(cdlv_config* config, const char* path, SDL_Renderer** r) {
-    cdlv_base* base = NULL;
-    base = cdlv_create(config);
-    if(!base) return NULL;
-
-    base->state = cdlv_main_run;
-    if(cdlv_read_file(base, path, r) < 0) return base;
-
-    cdlv_start(base);
-    return base;
-}
-
 static inline void cdlv_clean_scenes(cdlv_base* base) {
     if(base->scenes) {
         for(size_t i=0; i<base->scene_count; ++i)

@@ -33,16 +33,18 @@ void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const s
     else base->canvas->changing = false;
 }
 
-static inline void cdlv_load_images(cdlv_base* base, cdlv_canvas* canvas, cdlv_scene* scene) {
+static inline void cdlv_load_images(cdlv_base* base, cdlv_canvas* canvas, cdlv_scene* scene, zkt_client** client) {
     cdlv_alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
 
     char path[strlen(base->zkt_path)+16];
     sprintf(path, "%s/%d", base->zkt_path, base->c_scene);
 
-    size_t size;
-    char* file = zdlv_read_file(path, &size);
-    zkt_data* file_d = zkt_data_decompress(file, size);
-    free(file);
+    zkt_client_reconnect(client);
+    char cmd[cdlv_max_string_size];
+    sprintf(cmd, "GETI %s", path);
+    zkt_data_send_compress((*client)->fd, cmd, strlen(cmd)+1, 90);
+    zkt_vlog("sent command %s...", cmd);
+    zkt_data* file_d = zkt_data_recv((*client)->fd);
 
     for(size_t i=0; i<scene->image_count; ++i) {
         size_t img_size;
@@ -117,7 +119,7 @@ static inline void cdlv_scene_clean_leave_last(cdlv_scene* scene) {
         SDL_FreeSurface(scene->images[i]);
 }
 
-int cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
+int cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index, zkt_client** client) {
     if(index < base->scene_count) {
         base->canvas->iter = 0;
         if(base->config->dissolve_speed) base->canvas->changing = true;
@@ -126,7 +128,7 @@ int cdlv_scene_load(cdlv_base* base, const size_t prev, const size_t index) {
         base->p_scene = prev;
         base->c_image = 0;
         base->c_line  = 0;
-        cdlv_load_images(base, base->canvas, base->scenes[index]);
+        cdlv_load_images(base, base->canvas, base->scenes[index], client);
         cdlv_check_err();
         if(base->scenes[index]->type != cdlv_anim_once_scene && base->scenes[index]->type != cdlv_anim_wait_scene) {
             cdlv_text_update(base, base->scenes[index]->script[base->c_line]);
@@ -165,14 +167,14 @@ static inline void choice_update_prompt(cdlv_base* base) {
     cdlv_text_update(base, base->choice->prompt);
 }
 
-static inline void cdlv_goto(cdlv_base* base, const char* line) {
+static inline void cdlv_goto(cdlv_base* base, const char* line, zkt_client** client) {
     size_t i = 0;
     if((sscanf(line, cdlv_tag_func_goto " %lu", &i)) != 0)
         if(i < base->scene_count)
-            cdlv_scene_load(base, base->c_scene, i);
+            cdlv_scene_load(base, base->c_scene, i, client);
 }
 
-void cdlv_update(cdlv_base* base) {
+void cdlv_update(cdlv_base* base, zkt_client** client) {
     if(base->text->current_char != base->text->content_size) {
         strcpy(base->text->rendered, base->text->content);
         base->text->current_char = base->text->content_size;
@@ -183,13 +185,13 @@ void cdlv_update(cdlv_base* base) {
     char* cdlv_temp_line = base->scenes[base->c_scene]->script[base->c_line];
     if(cdlv_temp_scene->type == cdlv_anim_once_scene
         || cdlv_temp_scene->type == cdlv_anim_wait_scene) {
-        cdlv_scene_load(base, base->c_scene, base->c_scene+1);
+        cdlv_scene_load(base, base->c_scene, base->c_scene+1, client);
     } else {
         if(base->c_line == cdlv_temp_scene->line_count-1) {
             if(cdlv_temp_scene->type == cdlv_anim_text_scene && base->c_image == cdlv_temp_scene->image_count-1)
-                cdlv_scene_load(base, base->c_scene, base->c_scene+1);
+                cdlv_scene_load(base, base->c_scene, base->c_scene+1, client);
             else if(cdlv_temp_scene->type != cdlv_anim_text_scene)
-                cdlv_scene_load(base, base->c_scene, base->c_scene+1);
+                cdlv_scene_load(base, base->c_scene, base->c_scene+1, client);
         } else if(base->c_line < cdlv_temp_scene->line_count) {
             // update current line
             ++base->c_line;
@@ -201,34 +203,34 @@ void cdlv_update(cdlv_base* base) {
                         base->canvas->iter = 0;
                         if(base->config->dissolve_speed) base->canvas->changing = true;
                         else base->canvas->changing = false;
-                        cdlv_update(base);
+                        cdlv_update(base, client);
                     }
                 } else if(strstr(cdlv_temp_line, cdlv_tag_func_choice)) {
                     cdlv_choice_create(base);
-                    cdlv_update(base);
+                    cdlv_update(base, client);
                 } else if(strstr(cdlv_temp_line, cdlv_tag_func_end)) {
                     base->choice->state = cdlv_parsed;
                     choice_update_prompt(base);
                 } else if(strstr(cdlv_temp_line, cdlv_tag_func_goto)) {
-                    cdlv_goto(base, cdlv_temp_line);
+                    cdlv_goto(base, cdlv_temp_line, client);
                 }
             } else if(base->choice) {
                 if(base->choice->state == cdlv_parsing) {
                     cdlv_choice_add(base, cdlv_temp_line);
-                    cdlv_update(base);
+                    cdlv_update(base, client);
                 }
             } else cdlv_text_update(base, cdlv_temp_line);
         }
     }
 }
 
-void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
+void cdlv_handle_keys(cdlv_base* base, SDL_Event* e, zkt_client** client) {
     if(base->can_interact && !base->choice) {
         if(e->type == SDL_KEYUP && e->key.repeat == 0) switch(e->key.keysym.sym) {
-                case SDLK_RETURN: cdlv_update(base); break;
+                case SDLK_RETURN: cdlv_update(base, client); break;
         }
         if(e->type == SDL_CONTROLLERBUTTONUP) switch(e->cbutton.button) {
-                case SDL_CONTROLLER_BUTTON_A: cdlv_update(base); break;
+                case SDL_CONTROLLER_BUTTON_A: cdlv_update(base, client); break;
         }
     } else if(base->can_interact && base->choice) {
         if(e->type == SDL_KEYUP && e->key.repeat == 0) switch(e->key.keysym.sym) {
@@ -243,7 +245,7 @@ void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
                         choice_update_prompt(base);
                     } break;
                 case SDLK_RETURN:
-                    cdlv_choice_handler(base, base->choice->current);
+                    cdlv_choice_handler(base, base->choice->current, client);
                     break;
         }
         if(e->type == SDL_CONTROLLERBUTTONUP) switch(e->cbutton.button) {
@@ -258,16 +260,16 @@ void cdlv_handle_keys(cdlv_base* base, SDL_Event* e) {
                         choice_update_prompt(base);
                     } break;
                 case SDL_CONTROLLER_BUTTON_A:
-                    cdlv_choice_handler(base, base->choice->current);
+                    cdlv_choice_handler(base, base->choice->current, client);
                     break;
         }
     }
 }
 
-void cdlv_loop_start(cdlv_base* base, SDL_Event* e, int* run) {
+void cdlv_loop_start(cdlv_base* base, SDL_Event* e, int* run, zkt_client** client) {
     while(SDL_PollEvent(e) != 0) {
         if(e->type == SDL_QUIT) *run = false;
-        cdlv_handle_keys(base, e);
+        cdlv_handle_keys(base, e, client);
     }
     base->c_tick = SDL_GetTicks64();
     base->e_ticks = (base->c_tick - base->l_tick) / 1000.0f;
@@ -278,7 +280,7 @@ void cdlv_loop_end(cdlv_base* base, SDL_Renderer** r) {
     base->l_tick = base->c_tick;
 }
 
-void cdlv_start(cdlv_base* base) {
-    cdlv_scene_load(base, 0, 0);
+void cdlv_start(cdlv_base* base, zkt_client** client) {
+    cdlv_scene_load(base, 0, 0, client);
     if(base->error != cdlv_no_err) cdlv_logv("%d", base->error);
 }

@@ -2,6 +2,7 @@
 #define CDLV_TYPES_H
 
 #include <stdbool.h>
+#include "zocket/zocket.h"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

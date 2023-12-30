@@ -46,7 +46,10 @@ static inline zkt_data* pack_scene(struct scene_paths* scene) {
         memcpy(buffer+offset, images[i].data, images[i].size);
         offset += images[i].size;
     }
-    zkt_data* ret = zkt_data_compress(buffer, size, 90);
+    zkt_data* ret = malloc(sizeof(zkt_data));
+    ret->buffer = malloc(size);
+    ret->size = size;
+    memcpy(ret->buffer, buffer, size);
 
     free(buffer);
     for(size_t i=0; i<scene->image_count; i++) free(images[i].data);
