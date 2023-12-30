@@ -3,6 +3,8 @@
 #include "menu/cdlv_menu.h"
 #include "zocket/zocket.h"
 #include "zdlv.h"
+#include <sys/stat.h>
+#include <unistd.h>
 
 struct scene_paths {
     char** images;
@@ -32,40 +34,23 @@ static inline zkt_data* pack_scene(struct scene_paths* scene) {
         images[i].data = zdlv_read_file(scene->images[i], &size);
         images[i].size = size;
     }
-    
-    zkt_data** images_ = calloc(scene->image_count, sizeof(zkt_data*));
-    for(size_t i=0; i<scene->image_count; i++)
-        images_[i] = zkt_data_compress(images[i].data, images[i].size, 90);
-
-    for(size_t i=0; i<scene->image_count; i++) free(images[i].data);
-    free(images);
 
     size_t size = 0;
-    for(size_t i=0; i<scene->image_count; i++) size += 7 + strlen(scene->images[i]) + images_[i]->size; //IMG0000PATHBIN
+    for(size_t i=0; i<scene->image_count; i++) size += 3 + images[i].size; //IMGBIN
 
-    zkt_data* ret = malloc(sizeof(zkt_data));
-    ret->buffer = malloc(size);
     char* buffer = malloc(size);
-    ret->size = size;
     size_t offset = 0;
     for(size_t i=0; i<scene->image_count; i++) {
         memcpy(buffer+offset, "IMG", 3);
         offset += 3;
-        char str[5];
-        snprintf(str, 5, "%04lu", strlen(scene->images[i]));
-        memcpy(buffer+offset, str, 4);
-        offset += 4;
-        memcpy(buffer+offset, scene->images[i], strlen(scene->images[i]));
-        offset += strlen(scene->images[i]);
-        memcpy(buffer+offset, images_[i]->buffer, images_[i]->size);
-        offset += images_[i]->size;
+        memcpy(buffer+offset, images[i].data, images[i].size);
+        offset += images[i].size;
     }
-    memcpy(ret->buffer, buffer, size);
+    zkt_data* ret = zkt_data_compress(buffer, size, 90);
 
     free(buffer);
-    for(size_t i=0; i<scene->image_count; i++)
-        zkt_data_clean(images_[i]);
-    free(images_);
+    for(size_t i=0; i<scene->image_count; i++) free(images[i].data);
+    free(images);
 
     return ret;
 }
@@ -158,7 +143,7 @@ static inline void copy_scene_data(struct scene_paths** scenes, const char* path
     #undef cdlv_temp_scene
 }
 
-static int pack_script(const char* file, const char* name) {
+static int pack_script(const char* file) {
     size_t lines;
     char** script = cdlv_read_file_in_lines(file, &lines);
     char path[cdlv_small_string];
@@ -178,31 +163,19 @@ static int pack_script(const char* file, const char* name) {
     for(size_t i=0; i<scene_count; i++)
         scenes_data[i] = pack_scene(scenes[i]);
 
-    size_t size = 0;
-    zkt_data* ret = malloc(sizeof(zkt_data));
-    for(size_t i=0; i<scene_count; i++) 
-        size += 3 + scenes_data[i]->size; // SCNZKT
+    char scene_dir[cdlv_max_string_size];
+    strncpy(scene_dir, file, strlen(file)-4);
 
-    ret->buffer = malloc(size);
-    ret->size = size;
-    char* buffer = malloc(size);
-    size_t offset = 0;
+    if(mkdir(scene_dir, 0755) == -1) cdlv_logv("%s already exists or another error occured", scene_dir);
 
     for(size_t i=0; i<scene_count; i++) {
-        memcpy(buffer+offset, "SCN", 3);
-        offset += 3;
-        memcpy(buffer+offset, scenes_data[i]->buffer, scenes_data[i]->size);
-        offset += scenes_data[i]->size;
-    }
-    memcpy(ret->buffer, buffer, size);
-
-    for(size_t i=0; i<scene_count; i++)
+        char file_path[cdlv_max_string_size*2];
+        sprintf(file_path, "%s/%lu", scene_dir, i);
+        write_file_zkt_data(file_path, scenes_data[i]);
         zkt_data_clean(scenes_data[i]);
-    free(scenes_data);
-    free(buffer);
+    }
 
-    write_file_zkt_data(name, ret);
-    zkt_data_clean(ret);
+    free(scenes_data);
 
     for(size_t i=0; i<scene_count; i++) {
         for(size_t j=0; j<scenes[i]->image_count; j++) free(scenes[i]->images[j]);
@@ -214,7 +187,7 @@ static int pack_script(const char* file, const char* name) {
 }
 
 int main(int argc, char** argv) {
-    if(argc!=3) printf("zdlv-packer [.adv] [.adv.zkt]\n"), exit(EXIT_FAILURE);
-    pack_script(argv[1], argv[2]);
+    if(argc!=2) printf("zdlv-packer [.adv]\n"), exit(EXIT_FAILURE);
+    pack_script(argv[1]);
     return EXIT_SUCCESS;
 }
