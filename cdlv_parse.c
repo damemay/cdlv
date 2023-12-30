@@ -162,9 +162,9 @@ int cdlv_read_file(cdlv_base* base, const char* file, SDL_Renderer** r) {
         return -1;
     }
 
-    base->zkt_path = malloc(strlen(file)+5);
-    sprintf(base->zkt_path, "%s.zkt", file);
-    base->zkt_file = zdlv_read_file(base->zkt_path, &base->zkt_size);
+    base->zkt_path = malloc(strlen(file)-3);
+    strncpy(base->zkt_path, file, strlen(file)-4);
+    base->zkt_path[strlen(file)-4] = '\0';
 
     cdlv_canvas_create(base, canvas_w, canvas_h, framerate, r);
     cdlv_check_err();

@@ -1,7 +1,8 @@
 #pragma once
 #include "cdlv.h"
+#include <sys/stat.h>
 
-static inline char* zdlv_get(char** input, size_t* size, char* find) {
+static inline char* zdlv_get(void** input, size_t* size, char* find, size_t* ret_s) {
     size_t start = 0, end = 0, i = 0;
     char* input_ = *input;
     size_t size_ = *size;
@@ -13,15 +14,19 @@ static inline char* zdlv_get(char** input, size_t* size, char* find) {
                 if(input_[i+c] == find[c]) count++;
             if(count == len) {
                 i += count;
-                if(start == 0) start = i;
-                else end = i-count;
-                continue;
+                if(start == 0) {
+                    start = i;
+                    continue;
+                } else {
+                    end = i-count;
+                    break;
+                }
             }
         }
         i++;
     }
 
-    if(start == 0) return NULL;
+    if(start == 0 && end == 0) return NULL;
 
     if(end == 0) end = size_;
     size_t ret_size = end-start;
@@ -35,6 +40,7 @@ static inline char* zdlv_get(char** input, size_t* size, char* find) {
 
     *input = changed;
     *size = changed_size;
+    *ret_s = ret_size;
 
     return ret;
 }
@@ -42,7 +48,8 @@ static inline char* zdlv_get(char** input, size_t* size, char* find) {
 static inline char* zdlv_read_file(const char* path, size_t* buf_size) {
     FILE* file = fopen(path, "rb");
     if(!file) {
-        perror("cdlv");
+        cdlv_logv("%s", path);
+        perror("fopen");
         return NULL;
     }
 
@@ -50,7 +57,7 @@ static inline char* zdlv_read_file(const char* path, size_t* buf_size) {
     long size = ftell(file);
     rewind(file);
 
-    char* code = malloc(size+1);
+    char* code = malloc(size);
     if(!code) {
         fclose(file), cdlv_logv("Could not allocate memory for file: %s", path);
         return NULL;
@@ -62,8 +69,7 @@ static inline char* zdlv_read_file(const char* path, size_t* buf_size) {
     }
 
     fclose(file);
-    code[size] = '\0';
-    *buf_size = size+1;
+    *buf_size = size;
     return code;
 }
 

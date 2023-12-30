@@ -135,5 +135,6 @@ void cdlv_clean_all(cdlv_base* base) {
     cdlv_clean_scenes(base);
     cdlv_clean_canvas(base);
     cdlv_clean_text(base);
+    free(base->zkt_path);
     free(base);
 }

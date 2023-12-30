@@ -3,6 +3,7 @@
 #include "cdlv_types.h"
 #include "cdlv_util.h"
 #include "zdlv.h"
+#include "zocket/zocket.h"
 #include <SDL2/SDL_error.h>
 
 void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const size_t fps, SDL_Renderer** r) {
@@ -35,21 +36,28 @@ void cdlv_canvas_create(cdlv_base* base, const size_t w, const size_t h, const s
 static inline void cdlv_load_images(cdlv_base* base, cdlv_canvas* canvas, cdlv_scene* scene) {
     cdlv_alloc_ptr_arr(&scene->images, scene->image_count, SDL_Surface*);
 
-    size_t count = 0;
-    char* scn = zdlv_get(&base->zkt_file, &base->zkt_size, "SCN");
-    if(!scn) cdlv_log("scn not found");
-    else cdlv_log("scn found");
+    char path[strlen(base->zkt_path)+16];
+    sprintf(path, "%s/%d", base->zkt_path, base->c_scene);
 
-    free(scn);
+    size_t size;
+    char* file = zdlv_read_file(path, &size);
+    zkt_data* file_d = zkt_data_decompress(file, size);
+    free(file);
 
     for(size_t i=0; i<scene->image_count; ++i) {
+        size_t img_size;
+        char* img = zdlv_get(&file_d->buffer, &file_d->size, "IMG", &img_size);
+        if(!img) cdlv_log("null img");
+        SDL_RWops* rwops = SDL_RWFromMem(img, img_size);
+        if(!rwops) cdlv_logv("rwops: %s", SDL_GetError());
+
         SDL_Surface* temp = NULL;
-        temp = IMG_Load(scene->image_paths[i]);
+        temp = IMG_Load_RW(rwops, 1);
         if(!temp) {
             sprintf(base->log, "Could not load image "
                 "with path \"%s\": %s", scene->image_paths[i], SDL_GetError());
             base->error = cdlv_file_err;
-            return;
+            break;
         }
 
         if(temp->w < canvas->w && temp->h < canvas->h) {
@@ -59,13 +67,13 @@ static inline void cdlv_load_images(cdlv_base* base, cdlv_canvas* canvas, cdlv_s
             if(!scaled) {
                 sprintf(base->log, "Could not scale surface: %s", SDL_GetError());
                 base->error = cdlv_sdl_err;
-                return;
+                break;
             }
 
             if(SDL_BlitScaled(temp, NULL, scaled, NULL) < 0) {
                 sprintf(base->log, "Could not blit scaled surface: %s", SDL_GetError());
                 base->error = cdlv_sdl_err;
-                return;
+                break;
             }
             SDL_FreeSurface(temp);
             temp = scaled;
@@ -78,18 +86,21 @@ static inline void cdlv_load_images(cdlv_base* base, cdlv_canvas* canvas, cdlv_s
                 "when handling image with path "
                 "\"%s\": %s", scene->image_paths[i], SDL_GetError());
             base->error = cdlv_sdl_err;
-            return;
+            break;
         }
 
         if(SDL_SetSurfaceBlendMode(scene->images[i], SDL_BLENDMODE_BLEND) < 0) {
             sprintf(base->log, "Could not set alpha blending on image with path \"%s\": %s",
                 scene->image_paths[i], SDL_GetError());
             base->error = cdlv_sdl_err;
-            return;
+            break;
         }
 
         SDL_FreeSurface(temp);
+        free(img);
     }
+
+    zkt_data_clean(file_d);
 }
 
 static inline void cdlv_scene_clean(cdlv_scene* scene) {
