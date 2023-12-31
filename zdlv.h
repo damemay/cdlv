@@ -1,5 +1,8 @@
 #pragma once
-#include "cdlv.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include "zocket/zocket.h"
 #include <sys/stat.h>
 
 static inline char* zdlv_get(void** input, size_t* size, char* find, size_t* ret_s) {
@@ -48,7 +51,7 @@ static inline char* zdlv_get(void** input, size_t* size, char* find, size_t* ret
 static inline char* zdlv_read_file(const char* path, size_t* buf_size) {
     FILE* file = fopen(path, "rb");
     if(!file) {
-        cdlv_logv("%s", path);
+        zkt_vlog("%s", path);
         perror("fopen");
         return NULL;
     }
@@ -59,12 +62,12 @@ static inline char* zdlv_read_file(const char* path, size_t* buf_size) {
 
     char* code = malloc(size);
     if(!code) {
-        fclose(file), cdlv_logv("Could not allocate memory for file: %s", path);
+        fclose(file), zkt_vlog("Could not allocate memory for file: %s", path);
         return NULL;
     }
 
     if(fread(code, size, 1, file) != 1) {
-        fclose(file), free(code), cdlv_logv("Could not read file: %s", path);
+        fclose(file), free(code), zkt_vlog("Could not read file: %s", path);
         return NULL;
     }
 

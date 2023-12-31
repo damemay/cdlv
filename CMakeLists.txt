@@ -190,17 +190,11 @@ else()
         )
         endif()
         target_link_libraries(${ZDLV_NAME}
-            SDL2::SDL2
-            SDL2_image
-            SDL2_ttf
             zstd
             ${PROJECT_NAME}
             -fsanitize=address
         )
         target_link_libraries(${SERV_NAME}
-            SDL2::SDL2
-            SDL2_image
-            SDL2_ttf
             zstd
             ${PROJECT_NAME}
             -fsanitize=address
@@ -228,16 +222,10 @@ else()
             )
             endif()
             target_link_libraries(${ZDLV_NAME}
-                SDL2::SDL2
-                SDL2_image
-                SDL2_ttf
                 zstd
                 ${PROJECT_NAME}
             )
             target_link_libraries(${SERV_NAME}
-                SDL2::SDL2
-                SDL2_image
-                SDL2_ttf
                 zstd
                 ${PROJECT_NAME}
             )
