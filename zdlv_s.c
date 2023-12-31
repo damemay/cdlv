@@ -17,6 +17,7 @@ void callback(int fd) {
         if(!dir) return;
 
         char files[max_string_size];
+        strcpy(files, "");
         struct dirent* entry;
         while((entry = readdir(dir)) != NULL) {
             if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0 || !strstr(entry->d_name, ".adv"))

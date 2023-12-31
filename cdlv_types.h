@@ -99,6 +99,8 @@ typedef struct cdlv_vec2 {
 
 typedef struct cdlv_config {
     char text_font[cdlv_small_string];
+    char host[cdlv_small_string];
+    char port[cdlv_small_string];
     uint8_t text_size;
     cdlv_vec2 text_xy;
     uint16_t text_wrap;

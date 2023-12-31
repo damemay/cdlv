@@ -24,6 +24,8 @@ cdlv_error cdlv_config_from_file(cdlv_config* c, const char* path) {
         }
 
         if(!strcmp(name, "text_font"))          strncpy(c->text_font, value, cdlv_small_string-1);
+        else if(!strcmp(name, "host"))               strncpy(c->host, value, cdlv_small_string-1);
+        else if(!strcmp(name, "port"))               strncpy(c->port, value, cdlv_small_string-1);
         else if(!strcmp(name, "text_size"))     c->text_size = atoi(value);
         else if(!strcmp(name, "text_x"))        c->text_xy.x = atoi(value);
         else if(!strcmp(name, "text_y"))        c->text_xy.y = atoi(value);

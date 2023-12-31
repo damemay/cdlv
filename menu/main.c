@@ -12,18 +12,18 @@ extern unsigned int _newlib_heap_size_user = 300*1024*1024;
 #endif
 
 int main(int argc, char* argv[]) {
-    if(argc!=4) {
-        puts("cdlv-menu [config path] [host] [port]");
+    if(argc!=2) {
+        puts("cdlv-menu [config path]");
         return EXIT_FAILURE;
     }
 
-    zkt_client* client = zkt_client_init(argv[2], argv[3]);
-    if(!client) return EXIT_FAILURE;
-    
     sdl_base* sdl = sdl_create(TITLE, WIDTH, HEIGHT);
 
     cdlv_config config = {0};
     if(cdlv_config_from_file(&config, argv[1]) == cdlv_config_err) return EXIT_FAILURE;
+
+    zkt_client* client = zkt_client_init(config.host, config.port);
+    if(!client) return EXIT_FAILURE;
 
     cdlv_base* base = cdlv_create(&config);
     if(!base) return EXIT_FAILURE;
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     cdlv_menu* menu = NULL;
 
     #ifndef __vita__
-    menu = cdlv_menu_create(base, argv[2], sdl, client->fd);
+    menu = cdlv_menu_create(base, config.host, sdl, client->fd);
     #else
     menu = cdlv_menu_create(base, "ux0:/data/scripts", sdl->renderer);
     #endif
