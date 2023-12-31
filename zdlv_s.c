@@ -59,5 +59,7 @@ int main(int argc, char** argv) {
     while(1)
         if(zkt_server_accept(server, &callback) == -1) continue;
 
+    zkt_server_clean(server);
+
     return 0;
 }
