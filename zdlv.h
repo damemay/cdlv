@@ -5,7 +5,7 @@
 #include "zocket/zocket.h"
 #include <sys/stat.h>
 
-static inline char* zdlv_get(void** input, size_t* size, char* find, size_t* ret_s) {
+static inline char* zdlv_get(void** input, uint32_t* size, char* find, size_t* ret_s) {
     size_t start = 0, end = 0, i = 0;
     char* input_ = *input;
     size_t size_ = *size;
