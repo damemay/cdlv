@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 option(VITA "Build for vita" OFF)
+option(ZDLV_ONLY "Build only ZDLV" OFF)
 
 if(VITA)
 
@@ -88,6 +89,7 @@ if(VITA)
 else()
 
     project(cdlv)
+    if(NOT ZDLV_ONLY)
     if(APPLE)
         list(APPEND CMAKE_PREFIX_PATH
             /usr/local/Cellar/sdl2/2.26.5/lib/cmake/SDL2
@@ -106,6 +108,7 @@ else()
     find_package(SDL2 REQUIRED)
     find_package(SDL2_image REQUIRED)
     find_package(SDL2_ttf REQUIRED)
+    endif()
     
     set(CMAKE_C_COMPILER gcc)
     set(CMAKE_C_STANDARD 17)
@@ -115,6 +118,7 @@ else()
         add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
     endif()
     
+    if(NOT ZDLV_ONLY)
     add_library(${PROJECT_NAME} STATIC
         cdlv_base.c
         cdlv_parse.c
@@ -124,8 +128,11 @@ else()
         cdlv_choice.c
         cdlv_util.c
     )
+    endif()
 
+    if(NOT ZDLV_ONLY)
     set(EXEC_NAME cdlv-menu)
+    endif()
     set(ZDLV_NAME zdlv-packer)
     set(SERV_NAME zdlv-server)
 
@@ -137,21 +144,19 @@ else()
                 zocket/zocket.c
             )
     else()
+        if(NOT ZDLV_ONLY)
 	    add_executable(${EXEC_NAME}
 		menu/main.c
 		menu/cdlv_menu.c
                 menu/cdlv_sdl.c
                 zocket/zocket.c
 	    )
+        endif()
             add_executable(${ZDLV_NAME}
-		menu/cdlv_menu.c
-                menu/cdlv_sdl.c
                 zdlv.c
                 zocket/zocket.c
             )
-        add_executable(${SERV_NAME}
-		menu/cdlv_menu.c
-                menu/cdlv_sdl.c
+            add_executable(${SERV_NAME}
                 zocket/zocket.c
                 zdlv_s.c
             )
@@ -160,6 +165,7 @@ else()
     if(MINGW)
 	    set(SDL2_INCLUDE_DIRS "/c/msys64/mingw64/include/SDL2")
     endif()
+    if(NOT ZDLV_ONLY)
     include_directories(${EXEC_NAME}
         ${SDL2_INCLUDE_DIRS}
         ${SDL2IMAGE_INCLUDE_DIRS}
@@ -170,8 +176,10 @@ else()
         ${SDL2IMAGE_INCLUDE_DIRS}
         ${SDL2TTF_INCLUDE_DIRS}
     )
+    endif()
     
     if(CMAKE_BUILD_TYPE MATCHES "Debug")
+        if(NOT ZDLV_ONLY)
         target_link_libraries(${EXEC_NAME}
             SDL2::SDL2
             SDL2_image
@@ -180,6 +188,7 @@ else()
             ${PROJECT_NAME}
             -fsanitize=address
         )
+        endif()
         target_link_libraries(${ZDLV_NAME}
             SDL2::SDL2
             SDL2_image
@@ -188,7 +197,7 @@ else()
             ${PROJECT_NAME}
             -fsanitize=address
         )
-    target_link_libraries(${SERV_NAME}
+        target_link_libraries(${SERV_NAME}
             SDL2::SDL2
             SDL2_image
             SDL2_ttf
@@ -209,6 +218,7 @@ else()
             )
             add_definitions(-DSDL_MAIN_HANDLED)
 	else()
+            if(NOT ZDLV_ONLY)
             target_link_libraries(${EXEC_NAME}
                 SDL2::SDL2
                 SDL2_image
@@ -216,6 +226,7 @@ else()
                 zstd
                 ${PROJECT_NAME}
             )
+            endif()
             target_link_libraries(${ZDLV_NAME}
                 SDL2::SDL2
                 SDL2_image
@@ -223,7 +234,7 @@ else()
                 zstd
                 ${PROJECT_NAME}
             )
-        target_link_libraries(${SERV_NAME}
+            target_link_libraries(${SERV_NAME}
                 SDL2::SDL2
                 SDL2_image
                 SDL2_ttf
