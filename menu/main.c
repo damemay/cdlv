@@ -56,6 +56,7 @@ int main(int argc, char* argv[]) {
         cdlv_loop_end(base, &sdl->renderer);
     }
 
+    free(client);
     cdlv_clean_all(base);
     sdl_clean(sdl);
     return EXIT_SUCCESS;

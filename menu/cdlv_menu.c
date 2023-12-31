@@ -38,6 +38,8 @@ cdlv_menu* cdlv_menu_create(cdlv_base* base, const char* path, sdl_base* sdl, in
         tok = strtok(NULL, "\r\n");
     }
 
+    zkt_data_clean(files);
+
     cdlv_text_create(base,
             base->config->text_font, 16, 700,
             10, 10,
@@ -106,6 +108,7 @@ static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu, sdl_base
         zkt_vlog("sent command %s...", cmd);
         zkt_data* script = zkt_data_recv((*client)->fd);
         cdlv_read_file((*base), script->buffer, script->size,(*menu)->files[(*menu)->current_choice], &sdl->renderer);
+        zkt_data_clean(script);
         if(check_errors(*base, (*base)->error) == -1) return;
         SDL_SetWindowSize(sdl->window, (*base)->canvas->w, (*base)->canvas->h);
         cdlv_start((*base), client);
