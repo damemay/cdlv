@@ -3,6 +3,62 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#define cdlv_max_string_size    5120
+#define cdlv_small_string       1024
+
+#define cdlv_tag_scene          "!scene"
+#define cdlv_tag_bg             "!bg"
+#define cdlv_tag_anim           "!anim"
+#define cdlv_tag_anim_once      "!anim_once"
+#define cdlv_tag_anim_wait      "!anim_wait"
+#define cdlv_tag_anim_text      "!anim_text"
+#define cdlv_tag_script         "!script"
+
+#define cdlv_tag_func_image     "@image"
+#define cdlv_tag_func_goto      "@goto"
+#define cdlv_tag_func_choice    "@choice"
+#define cdlv_tag_func_end       "@end"
+
+#define cdlv_duplicate_string(dest, src, size)  \
+{                                               \
+    *dest = calloc(size, sizeof(char));         \
+    if(!dest)                                   \
+        zkt_log("Could not "                   \
+        "allocate destination for "             \
+        "string duplication!");                 \
+    strcpy(*dest, src);                         \
+}
+
+typedef enum {
+    cdlv_static_scene,
+    cdlv_anim_scene,
+    cdlv_anim_once_scene,
+    cdlv_anim_wait_scene,
+    cdlv_anim_text_scene,
+    cdlv_script,
+    cdlv_scene_decl,
+    cdlv_none,
+} cdlv_type;
+
+typedef enum {
+    cdlv_main_menu,
+    cdlv_main_run,
+} cdlv_state;
+
+typedef enum {
+    cdlv_parsing,
+    cdlv_parsed,
+} cdlv_parse_state;
+
+typedef enum {
+    cdlv_no_err,
+    cdlv_config_err,
+    cdlv_no_mem_err,
+    cdlv_file_err,
+    cdlv_script_err,
+    cdlv_sdl_err,
+} cdlv_error;
+
 struct scene_paths {
     char** images;
     uint16_t image_count;
@@ -26,18 +82,18 @@ char** cdlv_read_file_in_lines(const char* path, size_t* line_count) {
 
     char** code = malloc(size+1);
     if(!code) {
-        fclose(file), cdlv_logv("Could not allocate memory for file: %s", path);
+        fclose(file), zkt_vlog("Could not allocate memory for file: %s", path);
         return NULL;
     }
     
     char* temp = malloc(size+1);
     if(!temp) {
-        fclose(file), cdlv_logv("Could not allocate memory for file: %s", path);
+        fclose(file), zkt_vlog("Could not allocate memory for file: %s", path);
         return NULL;
     }
 
     if(fread(temp, size, 1, file) != 1) {
-        fclose(file), free(temp), cdlv_logv("Could not read file: %s", path);
+        fclose(file), free(temp), zkt_vlog("Could not read file: %s", path);
         return NULL;
     }
     temp[size] = '\0';
@@ -197,7 +253,7 @@ static int pack_script(const char* file) {
     char** script = cdlv_read_file_in_lines(file, &lines);
     char path[cdlv_small_string];
     if(!sscanf(script[0], "%*lu %*lu %*lu %s", path)) {
-        cdlv_logv("wrong data on the first line: %s", script[0]);
+        zkt_vlog("wrong data on the first line: %s", script[0]);
         return -1;
     }
 
@@ -215,7 +271,7 @@ static int pack_script(const char* file) {
     char scene_dir[cdlv_max_string_size];
     strncpy(scene_dir, file, strlen(file)-4);
 
-    if(mkdir(scene_dir, 0755) == -1) cdlv_logv("%s already exists or another error occured", scene_dir);
+    if(mkdir(scene_dir, 0755) == -1) zkt_vlog("%s already exists or another error occured", scene_dir);
 
     for(size_t i=0; i<scene_count; i++) {
         char file_path[cdlv_max_string_size*2];
