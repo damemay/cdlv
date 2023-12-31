@@ -191,12 +191,10 @@ else()
         endif()
         target_link_libraries(${ZDLV_NAME}
             zstd
-            ${PROJECT_NAME}
             -fsanitize=address
         )
         target_link_libraries(${SERV_NAME}
             zstd
-            ${PROJECT_NAME}
             -fsanitize=address
         )
     else()
@@ -223,11 +221,9 @@ else()
             endif()
             target_link_libraries(${ZDLV_NAME}
                 zstd
-                ${PROJECT_NAME}
             )
             target_link_libraries(${SERV_NAME}
                 zstd
-                ${PROJECT_NAME}
             )
 	endif()
     endif()
