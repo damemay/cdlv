@@ -107,7 +107,11 @@ static inline void menu_load_script(cdlv_base** base, cdlv_menu** menu, sdl_base
         zkt_data_send_compress((*client)->fd, cmd, strlen(cmd)+1, 90);
         zkt_vlog("sent command %s...", cmd);
         zkt_data* script = zkt_data_recv((*client)->fd);
-        cdlv_read_file((*base), script->buffer, script->size,(*menu)->files[(*menu)->current_choice], &sdl->renderer);
+        size_t null_term_size = script->size+1;
+        char* null_term = malloc(null_term_size);
+        memcpy(null_term, script->buffer, script->size);
+        null_term[script->size] = '\0';
+        cdlv_read_file((*base), null_term, null_term_size,(*menu)->files[(*menu)->current_choice], &sdl->renderer);
         zkt_data_clean(script);
         if(check_errors(*base, (*base)->error) == -1) return;
         SDL_SetWindowSize(sdl->window, (*base)->canvas->w, (*base)->canvas->h);

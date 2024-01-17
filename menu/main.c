@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     #ifndef __vita__
     menu = cdlv_menu_create(base, config.host, sdl, client->fd);
     #else
-    menu = cdlv_menu_create(base, "ux0:/data/scripts", sdl->renderer);
+    menu = cdlv_menu_create(base, config.host, sdl->renderer, client->fd);
     #endif
 
     while(sdl->run) {

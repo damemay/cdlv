@@ -48,7 +48,7 @@ static inline cdlv_type check_tag(const char* line) {
 }
 
 static inline size_t whitespace_check(const char* line) {
-    return strspn(line, " ");
+    return strspn(line, " \t");
 }
 
 static inline void count_scene_data(cdlv_base* base, char* const* file, const size_t line_count) {
@@ -146,7 +146,19 @@ static inline void copy_scene_data(cdlv_base* base, const char* path, char* cons
 }
 
 static inline char** file_into_lines(char* file, const size_t size, size_t* lines) {
-    char** code = malloc(size+1);
+    char* temp = malloc(size+1);
+    cdlv_duplicate_string(&temp, file, size+1);
+    size_t _lines = 0;
+    {
+        char* line = strtok(temp, "\r\n");
+        while(line) {
+            ++_lines;
+            line = strtok(NULL, "\r\n");
+        }
+    }
+    free(temp);
+
+    char** code = malloc(size+_lines);
 
     char* line = strtok(file, "\r\n");
     size_t i = 0;
