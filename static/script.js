@@ -5,14 +5,24 @@ let animFolder = '';
 let currentLine = 0;
 
 let textbox = document.getElementById("text");
+let textdiv = document.getElementById("text-div");
 let image = document.querySelector("img");
 
-loadScript('test.adv').then(function(res) {
-    script = res;
-    parseLine();
+getList().then(function(res) {
+    list = JSON.parse(res);
+    list.forEach((e) => {
+	textdiv.innerHTML += "<button onclick=\"init('"+e+"')\">"+e+"</button><br>";
+    });
 });
 
-textbox.addEventListener("click", parseLine);
+function init(name) {
+    loadScript(name).then(function(res) {
+	textdiv.innerHTML="<button id=\"text\" onclick=\"parseLine()\"></button>";
+	textbox = document.getElementById("text");
+	script = res;
+	parseLine();
+    });
+}
 
 function parseLine() {
     if(currentLine==0) {
