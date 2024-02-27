@@ -40,3 +40,6 @@ compile_commands.json
 CMakeListsV.txt
 sce_sys/
 parser/
+mdlv
+scripts/
+mongoose
