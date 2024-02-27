@@ -4,11 +4,11 @@ Experimental sub-branch of cdlv. HTTP server implementation of cdlv with JS web 
 - Uses Mongoose for HTTP serving.
 - Address-sanitized.
 
-## cdlv scene features currently implemented
-[x] static backgrounds changed based on script file
-[x] looped animation
-[ ] single loop animation
-[ ] prompt to jump to another scene based on player choice or scripted behavior
+## cdlv scene features implemented
+- [x] static backgrounds changed based on script file
+- [x] looped animation
+- [ ] single loop animation
+- [ ] prompt to jump to another scene based on player choice or scripted behavior
 
 ## usage
 Refer to [makefile](makefile) for building. 
