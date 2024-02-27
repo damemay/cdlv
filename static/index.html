@@ -9,15 +9,16 @@
         @media(prefers-color-scheme: light) {body {background-color: ghostwhite;color: black;}}
         @media(prefers-color-scheme: dark) {body {background-color: #222426;color: ghostwhite;}}
         #container { margin-right: auto; margin-left: auto; max-width: 480px; }
-        #text { border-radius: .5em; border-style: solid; padding: 2em;  }
-        button {font-family: 'Red Hat Mono', monospace;background-color: transparent;outline: none;border: none;color: cyan;margin:1em;}
+        #text-div { border-radius: .5em; border-style: solid; padding: 2em;  }
+        button {background-color: transparent;outline: none;border: none;color: white;}
         img { width: 100%; margin-top: 1em; border: 1px solid #ccc; }
     </style>
   </head>
   <body>
     <div id="container">
       <img src="anim?adv-stream/server/grey" />
-      <div id="text"></div>
+      <div id="text-div"><button id="text"></button></div>
     </div>
+    <script src="script.js"></script>
   </body>
 </html>

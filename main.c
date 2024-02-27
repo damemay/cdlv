@@ -157,7 +157,6 @@ static void timer_cb(void* arg) {
 
 int main(int argc, char *argv[]) {
     struct mg_mgr mgr;
-    mg_log_set(3);
     mg_mgr_init(&mgr);                                        
     mg_http_listen(&mgr, "http://localhost:8000", fn, &mgr);
     mg_timer_add(&mgr, 1000/60, MG_TIMER_REPEAT, timer_cb, &mgr);
