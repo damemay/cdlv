@@ -5,6 +5,7 @@
 
 #define MAX_SIZE    5120
 char path[10] = "scripts/";
+char host[32] = "http://localhost:8000";
 
 struct folder {
     char dir_name[MAX_SIZE];
@@ -158,9 +159,8 @@ static void timer_cb(void* arg) {
 int main(int argc, char *argv[]) {
     struct mg_mgr mgr;
     mg_mgr_init(&mgr);                                        
-    mg_http_listen(&mgr, "http://localhost:8000", fn, &mgr);
+    mg_http_listen(&mgr, host, fn, &mgr);
     mg_timer_add(&mgr, 1000/60, MG_TIMER_REPEAT, timer_cb, &mgr);
-    puts("polling...");
     for (;;) mg_mgr_poll(&mgr, 50);                         
     mg_mgr_free(&mgr);                                        
     return 0;
