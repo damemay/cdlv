@@ -25,11 +25,18 @@ function init(name) {
 }
 
 function parseLine() {
+    if(currentLine>=script.length) {
+	textdiv.innerHTML="END";
+	return;
+    }
     if(currentLine==0) {
 	let line = script[currentLine];
 	const reg = /(\d+) (\d+) (\d+) (\S+)/;
 	let toks = line.match(reg);
 	let width = Number(toks[1]), height = Number(toks[2]), fps = Number(toks[3])
+	let container = document.getElementById("container");
+	container.style = "max-width:"+width+"px;";
+	image.style = "max-height:"+height+"px;";
 	path = toks[4];
     	currentLine++;
     }
