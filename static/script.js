@@ -23,7 +23,12 @@ function add_img(src) {
 }
 
 function add_video(src) {
-    frame.innerHTML="<video src=\""+src+"\" type=\"video/mp4\"/>";
+    frame.innerHTML="<video src=\""+src+"\" type=\"video/mp4\" autoplay loop/>";
+    video = document.querySelector("video");
+}
+
+function add_video_once(src) {
+    frame.innerHTML="<video src=\""+src+"\" type=\"video/mp4\" autoplay/>";
     video = document.querySelector("video");
 }
 
@@ -67,6 +72,12 @@ function parseLine() {
 	line=script[++currentLine];
 	animFolder = line;
 	add_video('/anim?'+path+animFolder);
+	line=script[++currentLine];
+    }
+    if(line==="!anim_once" ||  line==="!anim_wait" || line==="!anim_text") {
+	line=script[++currentLine];
+	animFolder = line;
+	add_video_once('/anim?'+path+animFolder);
 	line=script[++currentLine];
     }
     if(read_images) {
