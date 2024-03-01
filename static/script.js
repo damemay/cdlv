@@ -6,7 +6,9 @@ let currentLine = 0;
 
 let textbox = document.getElementById("text");
 let textdiv = document.getElementById("text-div");
+let frame = document.getElementById("frame");
 let image = document.querySelector("img");
+let video = document.querySelector("video");
 
 getList().then(function(res) {
     list = JSON.parse(res);
@@ -15,10 +17,24 @@ getList().then(function(res) {
     });
 });
 
+function add_img(src) {
+    frame.innerHTML="<img src=\""+src+"\"/>";
+    image = document.querySelector("img");
+}
+
+function add_video(src) {
+    frame.innerHTML="<video src=\""+src+"\" type=\"video/mp4\"/>";
+    video = document.querySelector("video");
+}
+
+function add_textbox() {
+    textdiv.innerHTML="<button id=\"text\" onclick=\"parseLine()\"></button>";
+    textbox = document.getElementById("text");
+}
+
 function init(name) {
     loadScript(name).then(function(res) {
-	textdiv.innerHTML="<button id=\"text\" onclick=\"parseLine()\"></button>";
-	textbox = document.getElementById("text");
+	add_textbox();
 	script = res;
 	parseLine();
     });
@@ -36,7 +52,7 @@ function parseLine() {
 	let width = Number(toks[1]), height = Number(toks[2]), fps = Number(toks[3])
 	let container = document.getElementById("container");
 	container.style = "max-width:"+width+"px;";
-	image.style = "max-height:"+height+"px;";
+	frame.style = "max-height:"+height+"px;";
 	path = toks[4];
     	currentLine++;
     }
@@ -50,7 +66,7 @@ function parseLine() {
     if(line==="!anim") {
 	line=script[++currentLine];
 	animFolder = line;
-	image.src = '/anim?'+path+animFolder;
+	add_video('/anim?'+path+animFolder);
 	line=script[++currentLine];
     }
     if(read_images) {
@@ -59,12 +75,12 @@ function parseLine() {
 	    imagePaths.push(line);
 	    line=script[++currentLine];
 	}
-	image.src = '/bg?'+path+imagePaths[0];
+	add_img('/bg?'+path+imagePaths[0]);
     }
     if(line==="!script") line = script[++currentLine];
     line = script[currentLine];
     if(line.includes("@image")) {
-	image.src = '/bg?'+path+imagePaths[Number(line.slice(line.indexOf(' ')+1))];
+	add_img('/bg?'+path+imagePaths[Number(line.slice(line.indexOf(' ')+1))]);
 	currentLine++;
     }
 

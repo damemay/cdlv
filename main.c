@@ -7,45 +7,8 @@
 char path[10] = "scripts/";
 char host[32] = "http://localhost:8000";
 
-struct folder {
-    char dir_name[MAX_SIZE];
-    struct dirent** list;
-    int count;
-};
-
-int sdfilt(const struct dirent*de) {
-    if (strcmp (de->d_name, ".") == 0 || strcmp (de->d_name, "..") == 0)
-        return 0;
-    else
-        return 1;
-}
-
-struct folder* folder(const char* path) {
-    struct folder* new = malloc(sizeof(struct folder));
-    if(!new) return NULL;
-    struct dirent** nl = NULL;
-    int ndirs = 0;
-
-    if((ndirs=scandir(path, &nl, sdfilt, alphasort))<0) {
-    	perror("scandir");
-	return NULL;
-    }
-
-    new->list = nl;
-    new->count = ndirs;
-    strncpy(new->dir_name, path, MAX_SIZE);
-    return new;
-}
-
-void defolder(struct folder* f) {
-    free(f->list);
-    free(f);
-}
-
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
-    if(ev == MG_EV_OPEN) {
-	c->fn_data = NULL;
-    } else if (ev == MG_EV_HTTP_MSG) {
+    if (ev == MG_EV_HTTP_MSG) {
 	struct mg_http_message* hm = (struct mg_http_message*) ev_data;
 	if(mg_http_match_uri(hm, "/list")) {
 	    DIR* dir = opendir(path);
@@ -88,22 +51,22 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
 	    mg_http_reply(c, 200, NULL, "%.*s",
 		    (int)script.len, script.ptr);
 	} else if(mg_http_match_uri(hm, "/anim")) {
-	    char folder_path[MAX_SIZE];
-	    sprintf(folder_path, "%s%.*s", path, (int)hm->query.len, hm->query.ptr);
-
-	    if(c->fn_data) defolder(c->fn_data);
-	    c->fn_data = folder(folder_path);
-	    if(!c->fn_data) {
-		mg_http_reply(c, 500, NULL, "could not list files");
+	    char file_path[MAX_SIZE];
+	    sprintf(file_path, "%s%.*s", path, (int)hm->query.len, hm->query.ptr);
+	    struct mg_str img = mg_file_read(&mg_fs_posix, file_path);
+	    if(!img.ptr) {
+		mg_http_reply(c, 500, NULL, "could not read %s", file_path);
 		return;
 	    }
-
-	    c->data[0] = 'S';
 	    mg_printf(c,
-		"HTTP/1.0 200 OK\r\n"
-		"Cache-Control: no-cache\r\n"
-		"Pragma: no-cache\r\nExpires: Thu, 01 Dec 1994 16:00:00 GMT\r\n"
-		"Content-Type: multipart/x-mixed-replace; boundary=--foo\r\n\r\n");
+		    "HTTP/1.0 200 OK\r\n"
+		    "Cache-Control: no-cache\r\n"
+		    "Pragma: no-cache\r\nExpires: Thu, 01 Dec 1994 16:00:00 GMT\r\n"
+		    "Content-Type: video/mp4\r\n"
+		    "Content-Length: %lu\r\n\r\n",
+		    (unsigned long) img.len);
+	    mg_send(c, img.ptr, img.len);
+	    mg_send(c, "\r\n", 2);
 	} else if(mg_http_match_uri(hm, "/bg")) {
 	    char file_path[MAX_SIZE];
 	    sprintf(file_path, "%s%.*s", path, (int)hm->query.len, hm->query.ptr);
@@ -116,7 +79,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
 		    "HTTP/1.0 200 OK\r\n"
 		    "Cache-Control: no-cache\r\n"
 		    "Pragma: no-cache\r\nExpires: Thu, 01 Dec 1994 16:00:00 GMT\r\n"
-		    "--foo\r\nContent-Type: image/jpeg\r\n"
+		    "Content-Type: image/jpeg\r\n"
 		    "Content-Length: %lu\r\n\r\n",
 		    (unsigned long) img.len);
 	    mg_send(c, img.ptr, img.len);
@@ -125,42 +88,13 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
 	    struct mg_http_serve_opts opts = {.root_dir = "static"};
 	    mg_http_serve_dir(c, ev_data, &opts);
 	}
-    } else if(ev == MG_EV_CLOSE) {
-	if(c->fn_data) defolder(c->fn_data);
-	c->fn_data = NULL;
     }
-}
-
-static void broadcast_mjpeg_frame(struct mg_mgr* mgr) {
-    struct mg_connection* c;
-    for(c=mgr->conns; c!=NULL; c=c->next) {
-	if(c->data[0]!='S') continue;
-	if(!c->fn_data) continue;
-	struct folder* folder = (struct folder*) c->fn_data;
-	static size_t i;
-	const char* fpath = folder->list[i++%folder->count]->d_name;
-	char full_path[MAX_SIZE];
-	sprintf(full_path, "%s/%s", folder->dir_name, fpath);
-	struct mg_str data = mg_file_read(&mg_fs_posix, full_path);
-	if(!data.ptr || !data.len) continue;
-	mg_printf(c,
-	    "--foo\r\nContent-Type: image/jpeg\r\n"
-            "Content-Length: %lu\r\n\r\n",
-            (unsigned long) data.len);
-	mg_send(c, data.ptr, data.len);
-	mg_send(c, "\r\n", 2);
-    }
-}
-
-static void timer_cb(void* arg) {
-    broadcast_mjpeg_frame(arg);
 }
 
 int main(int argc, char *argv[]) {
     struct mg_mgr mgr;
     mg_mgr_init(&mgr);                                        
     mg_http_listen(&mgr, host, fn, &mgr);
-    mg_timer_add(&mgr, 1000/60, MG_TIMER_REPEAT, timer_cb, &mgr);
     for (;;) mg_mgr_poll(&mgr, 50);                         
     mg_mgr_free(&mgr);                                        
     return 0;
