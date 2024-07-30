@@ -95,14 +95,17 @@ Easy to implement into existing SDL2-based application.
 #include "cdlv.h"
 
 int main() {
-    uint32 screen_width = 640;
-    uint32 screen_height = 480;
+    uint16_t screen_width = 640;
+    uint16_t screen_height = 480;
     // Initialize SDL2, SDL2_image and SDL2_ttf.
     // ...
 
     // Initialize CDLV's "base".
     // You can leave this in-memory whenever using CDLV functionality.
-    cdlv* base = cdlv_new(screen_width, screen_height, SDL_Renderer*);
+    cdlv base = {
+        .width = screen_width,
+        .height = screen_height,
+    };
 
     // Define config for a script we will be loading.
     cdlv_config config = {
@@ -117,15 +120,15 @@ int main() {
     };
     
     // You can also load config from file.
-    cdlv_load_config("res/config", &config);
+    cdlv_load_config(&base, "res/config", &config);
 
-    cdlv_set_config(config);
-    cdlv_add_script("res/example.cdlv");
+    cdlv_set_config(&base, config);
+    cdlv_add_script(&base, "res/example.cdlv");
 
     while(sdl->run) {
-        cdlv_loop_start(base, SDL_Event);
-        cdlv_render(base, SDL_Renderer*);
-        cdlv_loop_end(base, SDL_Renderer*);
+        // cdlv_loop_start(base, SDL_Event);
+        // cdlv_render(base, SDL_Renderer*);
+        // cdlv_loop_end(base, SDL_Renderer*);
     }
 
     cdlv_free(base);
