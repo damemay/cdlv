@@ -1,5 +1,4 @@
-#include "cdlv.h"
-#include "cdlv_util.h"
+#include "file.h"
 
 char* cdlv_read_file_to_str(const char* path) {
     FILE* file = fopen(path, "rb");
