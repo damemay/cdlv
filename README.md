@@ -18,82 +18,77 @@ Easy to implement into existing SDL2-based application.
 # Lines starting with `!` are definitions.
 # `!resources_path` defines a path for loading resources.
 # Without this, CDLV will only look for resources in scripts directory.
-!resources_path = "res/";
-
-# Remember to end definition with a semicolon.
+!resources_path "res/"
 
 # Let's define resources. Resources are images or animations used just like variables.
 # Because they will be loaded as soon as CDLV is called to play the script and live for it's whole life, try not to declare too much and leave this usage for reserving custom names to be used by a whole script/game.
 # Let's reserve a name `empty` when we don't want to display anything and we want it to make it obvious inside our script:
-!resources = {
-  empty = "black_screen.png",
-};
+!resources {
+  empty "black_screen.png"
+}
 
 # Note: writing `!resources` again will delete previously defined resources (free memory and clear names) and overwrite them with new set.
 # Same goes for `!resources_path`.
 
 # For a script to run and display, there needs to exist a scene and, preferably, some text.
 # Scene is a special in many ways. For example, it's definition requires a name, e.g. `sun_rising` below:
-!scene sun_rising = {
+!scene sun_rising {
   # Inside a scene, you can define new `!resources_path` and `!resources` that will be valid only inside this scene's scope.
   # Resources defined here will be loaded as soon as the scene is loaded by CDLV.
   # This is the only place where calling `!resources_path` and `!resources` again won't overwrite the "global" variables.
   # But calling them again in the same scene will cause this scene resources to be overwritten, so beware!
   
   # `!resources_path` inside a scene is appended to the global `!resources_path`, so the line below will make the CDLV look for resources declared here inside `res/sun_rising/`:
-  !resources_path = "sun_rising/";
-  !resources = {
+  !resources_path "sun_rising/"
+  !resources {
     # There are some more options to loading resources, that work in both scopes, that weren't mentioned so far.
     # You can add a resource just as a filename. It's name will get taken from the filename, e.g. `cloudy_sky` for below lines:
-    "cloudy_sky.png",
+    "cloudy_sky.png"
     # When adding a image-based animation, add a list with it's name defined:
-    sky_clearing = {
-      "anim/frame0.jpg",
-      "anim/frame1.jpg",
-      "anim/frame2.jpg",
-      "anim/frame3.jpg",
-      "anim/frame4.jpg",
-      "anim/frame5.jpg",
-      "anim/frame6.jpg",
-      "anim/frame7.jpg",
-      "anim/frame8.jpg",
-      "anim/frame9.jpg",
-    },
-  };
+    sky_clearing {
+      "anim/frame0.jpg"
+      "anim/frame1.jpg"
+      "anim/frame2.jpg"
+      "anim/frame3.jpg"
+      "anim/frame4.jpg"
+      "anim/frame5.jpg"
+      "anim/frame6.jpg"
+      "anim/frame7.jpg"
+      "anim/frame8.jpg"
+      "anim/frame9.jpg"
+    }
+  }
 
   # Lines starting with `@` are prompts or functions.
   # Each character separated by a whitespace in the same line is it's argument.
   # Line below sets the current background image to file loaded from `res/cloudy_sky.png`:
-  @bg cloudy_sky,
-
-  # Notice that when calling a prompt (or later inserting text) inside a scene, the statement is finished with `,` and not `;`.
-  # `;` is reserved only for ending definitions. Statements inside a scene must end with `,`.
+  @bg cloudy_sky
 
   # Lines starting and ending with `"` are script lines that will be printed on screen.
   # Escape `"` with backslash if you want to include a character `"` in the text:
   "\"I don't like rainy days. I hope it will get sunnier soon.\"";
 
-  @bg empty,
-  "Later that day...",
+  @bg empty
+  "Later that day..."
 
   # Calls to `@bg` with one argument (a resource) like until now display resource as a static image.
   # If you want to play a loaded animation, you have to call `@bg resource time`, e.g.:
   #   `@bg resource once` for animation that plays once,
   #   `@bg resource loop` for looped animation.
-  @bg sky_clearing once,
+  @bg sky_clearing once
 
   # `.` is not allowed in resource name.
   # If there's a dot in resource name when calling `@bg`, CDLV will try to load a file with that name.
   # The paths it searches are the same as declared for the whole script.
-  @bg sunny_sky.png,
-  "\"Ah, it's the sun!\"",
+  @bg sunny_sky.png
+  "\"Ah, it's the sun!\""
 
   # You can also load a .mp4 video to display instead of a animation based on separate images.
   # Animation set as background at an end of scene will either loop till the program dies or end scene after finishing single loop.
-  @bg rickroll.mp4 once,
+  @bg rickroll.mp4 once
 
   # On scene's end, all it's resources are freed.
-};
+}
 ```
 ##### main.c
 ```c
