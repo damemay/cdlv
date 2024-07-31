@@ -1,0 +1,52 @@
+# this is a comment
+
+!resources_path "images/"
+!resources {
+	empty "white.png"
+}
+
+!scene countdown {
+	!resources_path "scene/"
+	!resources {
+		"1.png"
+		"2.png"
+		#comment
+		"3.png"
+	}
+
+	@bg empty
+	"I just displayed empty background."
+	@bg 1
+	"It should show 1."
+	@bg 2
+	"It should show 2."
+	@bg 3
+	"It should show 3."
+	@bg empty
+	"Now, for the special show."
+	# comment
+	@bg empty
+	"Did you see that?"
+	"Now let's try loading dynamically."
+	@bg 4.png
+	"It should show 4."
+	@bg 5.png
+	"It should show 5."
+	@bg 6.png
+	"It should show 6."
+	@bg empty
+	"Let's try and free all resources."
+	"All resources should be free, and because I'm displaying empty, it should show some error when I access an unloaded resource."
+	@bg 3
+	"Did something show or did it crash?"
+	"Let's load in dynamically."
+	@bg 1.png
+	"It should show 1."
+	@bg 2.png
+	"It should show 2."
+	"Now let's free all resources again."
+	"2 should still be displaying without error."
+	"Let's see if I can free 2.png"
+	"It should diplay some error."
+	"Or did it crash?"
+}

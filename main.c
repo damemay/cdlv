@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     cdlv_set_config(&base, config);
 
     cdlv_error result = 0;
-    result = cdlv_add_script(&base, "/home/mar/cdlv/scripts/test.cdlv");
+    result = cdlv_add_script(&base, "../res/sample/sample.cdlv");
     error(&base);
 
     //if(dic_find(base.resources, "empty", 5)) printf("empty => %s\n", *base.resources->value);
