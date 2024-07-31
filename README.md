@@ -44,19 +44,6 @@ Easy to implement into existing SDL2-based application.
     # There are some more options to loading resources, that work in both scopes, that weren't mentioned so far.
     # You can add a resource just as a filename. It's name will get taken from the filename, e.g. `cloudy_sky` for below lines:
     "cloudy_sky.png"
-    # When adding a image-based animation, add a list with it's name defined:
-    sky_clearing {
-      "anim/frame0.jpg"
-      "anim/frame1.jpg"
-      "anim/frame2.jpg"
-      "anim/frame3.jpg"
-      "anim/frame4.jpg"
-      "anim/frame5.jpg"
-      "anim/frame6.jpg"
-      "anim/frame7.jpg"
-      "anim/frame8.jpg"
-      "anim/frame9.jpg"
-    }
   }
 
   # Lines starting with `@` are prompts or functions.
