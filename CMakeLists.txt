@@ -5,31 +5,28 @@ find_package(SDL2_image REQUIRED)
 find_package(SDL2_ttf REQUIRED)
     
 set(CMAKE_C_COMPILER gcc)
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD 11)
     
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
+    #add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
 else()
     add_compile_options(-O2)
 endif()
     
 add_library(${PROJECT_NAME} STATIC
-    hashdict.c/hashdict.c
-    base.c
-    parse.c
     cdlv.c
-    text.c
-    render.c
-    choice.c
-    util.c
+    parse.c
+    resource.c
+    scene.c
+    file.c
+    hashdict.c/hashdict.c
+    array.c
 )
 
-set(EXEC_NAME cdlv-menu)
+set(EXEC_NAME cdlv-sample)
 
 add_executable(${EXEC_NAME}
-    menu/main.c
-    menu/cdlv_menu.c
-    menu/cdlv_sdl.c
+    main.c
 )
     
 include_directories(${EXEC_NAME}
@@ -44,7 +41,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
         SDL2_image
         SDL2_ttf
         ${PROJECT_NAME}
-        -fsanitize=address
+        #-fsanitize=address
     )
 else()
     target_link_libraries(${EXEC_NAME}
