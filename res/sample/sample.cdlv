@@ -1,52 +1,84 @@
-# this is a comment
+# This is a comment. It's not parsed by CDLV.
 
+# Lines starting with `!` are definitions.
+# `!resources_path` defines a path for loading resources.
+# Without this, CDLV will only look for resources in scripts directory.
 !resources_path "images/"
+
+# Let's define resources. Resources are images or animations used just like variables.
+# Because they will be loaded as soon as CDLV is called to play the script and live for it's whole life, try not to declare too much and leave this usage for reserving custom names to be used by a whole script/game.
+# Let's reserve a name `empty` when we don't want to display anything and we want it to make it obvious inside our script:
 !resources {
 	empty "white.png"
 }
 
+# Note: writing `!resources` again will delete previously defined resources (free memory and clear names) and overwrite them with new set.
+# Same goes for `!resources_path`.
+
+# For a script to run and display, there needs to exist a scene and, preferably, some text.
+# Scene is a special in many ways. For example, it's definition requires a name, e.g. `countdown` below:
 !scene countdown {
+  	# Inside a scene, you can define new `!resources_path` and `!resources` that will be valid only inside this scene's scope.
+  	# Resources defined here will be loaded as soon as the scene is loaded by CDLV.
+  	# This is the only place where calling `!resources_path` and `!resources` again won't overwrite the "global" variables.
+  	# But calling them again in the same scene will cause this scene resources to be overwritten, so beware!
+	 
+	# `!resources_path` inside a scene is appended to the global `!resources_path`, so the line below will make the CDLV look for resources declared here inside `images/scene/`:
 	!resources_path "scene/"
 	!resources {
+		# There are some more options to loading resources, that work in both scopes, that weren't mentioned so far.
+		# You can add a resource just as a filename. It's name will get taken from the filename, e.g. `1`, `2`, `3` for the lines below:
 		"1.png"
 		"2.png"
-		#comment
 		"3.png"
 	}
 
+	# Lines starting with `@` are prompts or functions.
+	# Each character separated by a whitespace in the same line is it's argument.
+	# Line below sets the current background image to file loaded from `images/white.png`:
 	@bg empty
-	"I just displayed empty background."
+
+	# Lines not starting with `@` are script lines that will be printed on screen.
+	I just displayed empty background.
 	@bg 1
-	"It should show 1."
+	It should show 1.
 	@bg 2
-	"It should show 2."
+	It should show 2.
 	@bg 3
-	"It should show 3."
+	It should show 3.
 	@bg empty
 	"Now, for the special show."
-	# comment
-	@bg empty
+
+	# Calls to `@bg` with one argument (a resource) like until now display resource as a static image.
+	# If you want to play a loaded animation, you have to call `@bg resource time`, e.g.:
+	#   `@bg resource once` for animation that plays once,
+	#   `@bg resource loop` for looped animation.
+	@bg animation once
+
 	"Did you see that?"
 	"Now let's try loading dynamically."
+
+	# `.` is not allowed in resource name.
+	# If there's a dot in resource name when calling `@bg`, CDLV will try to load a file with that name.
+	# The paths it searches are the same as declared for the whole script.
 	@bg 4.png
+
 	"It should show 4."
 	@bg 5.png
 	"It should show 5."
 	@bg 6.png
 	"It should show 6."
 	@bg empty
-	"Let's try and free all resources."
-	"All resources should be free, and because I'm displaying empty, it should show some error when I access an unloaded resource."
 	@bg 3
-	"Did something show or did it crash?"
 	"Let's load in dynamically."
 	@bg 1.png
 	"It should show 1."
 	@bg 2.png
 	"It should show 2."
-	"Now let's free all resources again."
-	"2 should still be displaying without error."
-	"Let's see if I can free 2.png"
-	"It should diplay some error."
-	"Or did it crash?"
+
+	# You can also load a .mp4 video to display instead of a animation based on separate images.
+	# Animation set as background at an end of scene will either loop till the program dies or end scene after finishing single loop.
+	@bg animation2.mp4 once
+	 
+	# On scene's end, all it's resources are freed.
 }
