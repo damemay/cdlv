@@ -65,6 +65,10 @@ void cdlv_init(cdlv* base, uint16_t width, uint16_t height);
 void cdlv_set_config(cdlv* base, const cdlv_config config);
 cdlv_error cdlv_add_script(cdlv* base, const char* path);
 
+cdlv_error cdlv_play(cdlv* base, SDL_Renderer* renderer);
+cdlv_error cdlv_loop(cdlv* base, SDL_Renderer* renderer);
+cdlv_error cdlv_stop(cdlv* base);
+
 void cdlv_free(cdlv* base);
 
 #endif

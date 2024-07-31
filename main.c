@@ -6,9 +6,9 @@
 #define _height 544
 #define _title "cdlv2"
 
-void error(cdlv* base, cdlv_error result) {
-    if(result == cdlv_ok) return;
-    printf("%d", result);
+void error(cdlv* base) {
+    if(base->error == cdlv_ok) return;
+    printf("%d\n", base->error);
     switch(base->error) {
         case cdlv_ok: printf("CDLV OK\n"); break;
         case cdlv_memory_error: printf("CDLV Memory error: "); break;
@@ -47,14 +47,18 @@ int main(int argc, char* argv[]) {
 
     cdlv_error result = 0;
     result = cdlv_add_script(&base, "/home/mar/cdlv/scripts/test.cdlv");
-    error(&base, result);
+    error(&base);
+
+    //if(dic_find(base.resources, "empty", 5)) printf("empty => %s\n", *base.resources->value);
+    //else printf("not found\n");
+
+    cdlv_play(&base, _renderer);
+    error(&base);
 
     printf("global resources:\n");
     dic_forEach(base.resources, foreach_res, NULL);
     printf("scenes:\n");
     dic_forEach(base.scenes, foreach_scene, NULL);
-    //if(dic_find(base.resources, "empty", 5)) printf("empty => %s\n", *base.resources->value);
-    //else printf("not found\n");
 
     bool _running = true;
     while(_running) {
@@ -64,8 +68,12 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
+        SDL_RenderClear(_renderer);
+        if(base.is_playing) cdlv_loop(&base, _renderer);
+        SDL_RenderPresent(_renderer);
     }
 
+    cdlv_stop(&base);
     cdlv_free(&base);
 
     SDL_DestroyRenderer(_renderer);
