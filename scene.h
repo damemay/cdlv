@@ -6,6 +6,7 @@
 #include "util.h"
 
 typedef struct cdlv_scene {
+    uint16_t index;
     char* resources_path;
     cdlv_dict* resources;
     scl_array* script;

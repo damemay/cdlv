@@ -100,13 +100,9 @@ static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* res
 cdlv_error cdlv_resource_load(cdlv* base, cdlv_resource* resource, SDL_Renderer* renderer) {
     cdlv_error res;
     if(resource->type == cdlv_resource_image) {
-        if((res = cdlv_resource_image_load(base, resource, renderer)) != cdlv_ok) {
-            cdlv_err(res);
-        }
+        if((res = cdlv_resource_image_load(base, resource, renderer)) != cdlv_ok) cdlv_err(res);
     } else if(resource->type == cdlv_resource_video) {
-        if((res = cdlv_resource_video_load(base, resource, renderer)) != cdlv_ok) {
-            cdlv_err(res);
-        }
+        if((res = cdlv_resource_video_load(base, resource, renderer)) != cdlv_ok) cdlv_err(res);
     }
     resource->loaded = true;
     cdlv_err(cdlv_ok);

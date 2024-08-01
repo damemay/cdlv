@@ -31,6 +31,7 @@
 		"1.png"
 		"2.png"
 		"3.png"
+		animation "anim.mp4"
 	}
 
 	# Lines starting with `@` are prompts or functions.
@@ -53,9 +54,9 @@
 	# If you want to play a loaded animation, you have to call `@bg resource time`, e.g.:
 	#   `@bg resource once` for animation that plays once,
 	#   `@bg resource loop` for looped animation.
-	@bg animation once
+	@bg animation loop
 
-	"Did you see that?"
+	"Do you see this?"
 	"Now let's try loading dynamically."
 
 	# `.` is not allowed in resource name.
@@ -78,7 +79,7 @@
 
 	# You can also load a .mp4 video to display instead of a animation based on separate images.
 	# Animation set as background at an end of scene will either loop till the program dies or end scene after finishing single loop.
-	@bg animation2.mp4 once
+	@bg anim.mp4 once
 	 
 	# On scene's end, all it's resources are freed.
 }

@@ -7,6 +7,7 @@
 
 void cdlv_init(cdlv* base, uint16_t width, uint16_t height) {
     base->error = 0;
+    base->scene_count = 0;
     base->width = width;
     base->height = height;
     base->resources = dic_new(0);
@@ -42,17 +43,9 @@ cdlv_error cdlv_add_script(cdlv* base, const char* path) {
     cdlv_error res;
     char* script = NULL;
 
-    if((res = extract_path(base, path)) != cdlv_ok) {
-        cdlv_err(res);
-    }
-
-    if((res = cdlv_read_file_to_str(base, path, &script)) != cdlv_ok) {
-        cdlv_err(res);
-    }
-
-    if((res = cdlv_parse_script(base, script)) != cdlv_ok) {
-        cdlv_err(res);
-    }
+    if((res = extract_path(base, path)) != cdlv_ok) cdlv_err(res);
+    if((res = cdlv_read_file_to_str(base, path, &script)) != cdlv_ok) cdlv_err(res);
+    if((res = cdlv_parse_script(base, script)) != cdlv_ok) cdlv_err(res);
 
     free(script);
     cdlv_err(cdlv_ok);

@@ -5,7 +5,7 @@
 
 #define cdlv_logv(msg, ...) sprintf(base->log, msg, __VA_ARGS__)
 #define cdlv_log(msg) sprintf(base->log, "%.*s", strlen(msg) > cdlv_max_string_size ? (int)cdlv_max_string_size : (int)strlen(msg), msg)
-#define cdlv_err(err) base->error = err; return err
+#define cdlv_err(err) ({base->error = err; return err;})
 
 #define cdlv_strdup(dest, src, size)            \
 {                                               \

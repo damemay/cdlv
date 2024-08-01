@@ -5,6 +5,7 @@
 #include <libavutil/imgutils.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
+#include <pthread.h>
 
 #include "cdlv.h"
 
@@ -26,8 +27,6 @@ typedef struct cdlv_video {
     SDL_Rect rect;
     SDL_Texture* texture;
     double sleep_time;
-    bool is_playing;
-    bool loop;
 } cdlv_video;
 
 typedef struct cdlv_resource {

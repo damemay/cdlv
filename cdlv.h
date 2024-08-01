@@ -58,6 +58,7 @@ typedef struct cdlv {
     cdlv_config config;
     cdlv_text* text;
     cdlv_dict* scenes;
+    uint16_t scene_count;
     char* resources_path;
     cdlv_dict* resources;
 } cdlv;

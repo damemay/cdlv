@@ -34,7 +34,7 @@ int foreach_res(void *key, int count, void **value, void *user) {
 
 int foreach_scene(void *key, int count, void **value, void *user) {
     cdlv_scene* scene = (cdlv_scene*)*value;
-    printf("%.*s\n", count, (char*)key);
+    printf("%d - %.*s\n", scene->index, count, (char*)key);
     dic_forEach(scene->resources, foreach_res, NULL);
     return 1;
 }
@@ -68,18 +68,18 @@ int main(int argc, char* argv[]) {
     dic_forEach(base.scenes, foreach_scene, NULL);
 
     cdlv_resource r = {
-        .path = "/home/mar/cdlv/scripts/idol/last1.mp4",
+        .path = "",
         .type = cdlv_resource_video,
     };
     cdlv_resource_load(&base, &r, _renderer);
     error(&base);
     int ret = 0;
-    r.video->loop = false;
-    r.video->is_playing = true;
-    while(r.video->is_playing) {
+    bool loop = false;
+    bool is_playing = true;
+    while(is_playing) {
         if((ret = av_read_frame(r.video->format_context, r.video->packet)) == AVERROR_EOF) {
-            if(!r.video->loop) {
-                r.video->is_playing = false;
+            if(!loop) {
+                is_playing = false;
                 break;
             }
             av_seek_frame(r.video->format_context, r.video->video_stream, 0, 0);
