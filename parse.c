@@ -91,7 +91,6 @@ static inline cdlv_error add_new_resource(cdlv* base, const char* base_path, con
     cdlv_resource* resource;
     if((res = extract_resource_kv(base, line, &key, &path)) != cdlv_ok) cdlv_err(res);
     if((res = strcat_new(base, base_path, path, &path)) != cdlv_ok) cdlv_err(res);
-    printf(" %s %lu %s", key, strlen(key), path);
     if((res = cdlv_resource_new(base, cdlv_resource_image, path, &resource)) != cdlv_ok) cdlv_err(res);
     dic_add(resources, key, strlen(key));
     *resources->value = resource;
@@ -99,11 +98,9 @@ static inline cdlv_error add_new_resource(cdlv* base, const char* base_path, con
 }
 
 static inline cdlv_error add_new_scene(cdlv* base, const char* line, cdlv_scene** scene) {
-    printf(", extracting");
     char* name = NULL;
     cdlv_error result = extract_non_quote(base, line, &name);
     if(result != cdlv_ok) cdlv_err(result);
-    printf(" %s", name);
     cdlv_scene* new_scene;
     if((result = cdlv_scene_new(base, base->resources_path, &new_scene)) != cdlv_ok) cdlv_err(result);
     new_scene->index = base->scene_count;
@@ -116,11 +113,9 @@ static inline cdlv_error add_new_scene(cdlv* base, const char* line, cdlv_scene*
 
 static inline cdlv_error parse_global_resource(cdlv* base, cdlv_parse_mode* mode, const char* line) {
     if(strstr(line, cdlv_tag_closure)) {
-        printf("\t-- changing parse mode to global");
         *mode = cdlv_parse_global;
         cdlv_err(cdlv_ok);
     }
-    printf("\t-- extracting");
     cdlv_error res;
     if((res = add_new_resource(base, base->resources_path, line, base->resources)) != cdlv_ok) cdlv_err(res);
     cdlv_err(cdlv_ok);
@@ -128,20 +123,16 @@ static inline cdlv_error parse_global_resource(cdlv* base, cdlv_parse_mode* mode
 
 static inline cdlv_error parse_global_definition(cdlv* base, cdlv_parse_mode* mode, const char* line, cdlv_scene** scene) {
     if(strstr(line, cdlv_tag_define_resources_path)) {
-        printf("\t-- extracting");
         char* new_path;
         cdlv_error result = extract_from_quotes(base, line, &new_path);
         if(result != cdlv_ok) cdlv_err(result);
         if((result = strcat_new(base, base->resources_path, new_path, &base->resources_path)) != cdlv_ok) cdlv_err(result);
         free(new_path);
-        printf(" %s", base->resources_path);
         cdlv_err(result);
     } else if(strstr(line, cdlv_tag_define_resources)) {
-        printf("\t-- changing parse mode to global_resources");
         *mode = cdlv_parse_global_resources;
         cdlv_err(cdlv_ok);
     } else if(strstr(line, cdlv_tag_define_scene)) {
-        printf("\t-- changing parse mode to parse_scene");
         cdlv_error result = add_new_scene(base, line, scene);
         if(result != cdlv_ok) cdlv_err(cdlv_ok);
         *mode = cdlv_parse_scene;
@@ -154,12 +145,10 @@ static inline cdlv_error parse_global_definition(cdlv* base, cdlv_parse_mode* mo
 
 static inline cdlv_error parse_scene_resource(cdlv* base, cdlv_parse_mode* mode, const char* line, cdlv_scene** scene) {
     if(strstr(line, cdlv_tag_closure)) {
-        printf("\t-- changing parse mode to scene");
         *mode = cdlv_parse_scene;
         cdlv_err(cdlv_ok);
     }
     cdlv_scene* current_scene = *scene;
-    printf("\t-- extracting");
     cdlv_error res;
     if((res = add_new_resource(base, current_scene->resources_path, line, current_scene->resources)) != cdlv_ok) cdlv_err(res);
     cdlv_err(cdlv_ok);
@@ -168,16 +157,13 @@ static inline cdlv_error parse_scene_resource(cdlv* base, cdlv_parse_mode* mode,
 static inline cdlv_error parse_scene_definition(cdlv* base, cdlv_parse_mode* mode, const char* line, cdlv_scene** scene) {
     cdlv_scene* current_scene = *scene;
     if(strstr(line, cdlv_tag_define_resources_path)) {
-        printf("\t-- extracting");
         char* new_path;
         cdlv_error result = extract_from_quotes(base, line, &new_path);
         if(result != cdlv_ok) cdlv_err(result);
         if((result = strcat_new(base, base->resources_path, new_path, &current_scene->resources_path)) != cdlv_ok) cdlv_err(result);
         free(new_path);
-        printf(" %s", current_scene->resources_path);
         cdlv_err(result);
     } else if(strstr(line, cdlv_tag_define_resources)) {
-        printf("\t-- changing parse mode to scene_resources");
         *mode = cdlv_parse_scene_resources;
         cdlv_err(cdlv_ok);
     }
@@ -222,11 +208,9 @@ static inline cdlv_error parse_nprefix_line(cdlv* base, cdlv_parse_mode* mode, c
             break;
         case cdlv_parse_scene:
             if(strstr(line, cdlv_tag_closure)) {
-                printf("\t-- changing parse mode to global");
                 *mode = cdlv_parse_global;
                 cdlv_err(cdlv_ok);
             }
-            printf("\t-- adding to script");
             SCL_ARRAY_ADD((*scene)->script, (char*)line, char*);
             break;
         case cdlv_parse_scene_resources:
@@ -246,9 +230,7 @@ cdlv_error cdlv_parse_script(cdlv* base, char* script) {
     while(token != NULL) {
         size_t w = strspn_whitespace(token);
         char* line = token+w;
-        printf("%s", line);
         if(line[0] == '#') { 
-            printf("\t-- skipping");
             goto next_line;
         } else if(line[0] == '!') {
             if((res = parse_definition(base, &mode, line, &scene)) != cdlv_ok) cdlv_err(res);
@@ -256,7 +238,6 @@ cdlv_error cdlv_parse_script(cdlv* base, char* script) {
             if((res = parse_nprefix_line(base, &mode, line, &scene)) != cdlv_ok) cdlv_err(res);
         }
         next_line:
-        printf("\n");
         token = strtok(NULL, "\r\n");
     }
 

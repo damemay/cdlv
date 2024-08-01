@@ -13,7 +13,6 @@
 
 void error(cdlv* base) {
     if(base->error == cdlv_ok) return;
-    printf("%d\n", base->error);
     switch(base->error) {
         case cdlv_ok: printf("CDLV OK\n"); break;
         case cdlv_memory_error: printf("CDLV Memory error: "); break;
