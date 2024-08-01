@@ -10,6 +10,7 @@ typedef enum {
     cdlv_memory_error,
     cdlv_file_error,
     cdlv_read_error,
+    cdlv_video_error,
     cdlv_parse_error,
 } cdlv_error;
 

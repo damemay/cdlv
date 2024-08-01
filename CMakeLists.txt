@@ -40,6 +40,10 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
         SDL2::SDL2
         SDL2_image
         SDL2_ttf
+        avcodec
+        avformat
+        avutil
+        swscale
         ${PROJECT_NAME}
         #-fsanitize=address
     )
@@ -48,6 +52,10 @@ else()
         SDL2::SDL2
         SDL2_image
         SDL2_ttf
+        avcodec
+        avformat
+        avutil
+        swscale
         ${PROJECT_NAME}
     )
 endif()
