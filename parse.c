@@ -36,7 +36,7 @@ static inline cdlv_error extract_non_quote(cdlv* base, const char* line, char** 
     char* start_position = NULL;
     bool scene_name = line[0] == '!' ? true : false;
     if(scene_name) start_position = find_first_whitespace(line);
-    else start_position = line;
+    else start_position = (char*)line;
     char* end_position = find_first_whitespace(start_position+1);
     if(!end_position) {
         cdlv_logv("Did not find name on line: %s", line);
@@ -95,8 +95,8 @@ static inline cdlv_error add_new_resource(cdlv* base, const char* base_path, con
     char tmp[strlen(base_path)+strlen(path)+1];
     sprintf(tmp, "%s%s", base_path, path);
     free(path);
-    cdlv_strdup(&path, tmp, strlen(tmp));
-    printf(" %s %d %s", key, strlen(key), path);
+    cdlv_strdup(&path, tmp, strlen(tmp)+1);
+    printf(" %s %lu %s", key, strlen(key), path);
     if((res = cdlv_resource_new(base, cdlv_resource_image, path, &resource)) != cdlv_ok) {
         cdlv_err(res);
     }
@@ -149,7 +149,7 @@ static inline cdlv_error parse_global_definition(cdlv* base, cdlv_parse_mode* mo
         sprintf(tmp, "%s%s", base->resources_path, new_path);
         free(new_path);
         free(base->resources_path);
-        cdlv_strdup(&base->resources_path, tmp, strlen(tmp));
+        cdlv_strdup(&base->resources_path, tmp, strlen(tmp)+1);
         printf(" %s", base->resources_path);
         cdlv_err(result);
     } else if(strstr(line, cdlv_tag_define_resources)) {
@@ -198,7 +198,7 @@ static inline cdlv_error parse_scene_definition(cdlv* base, cdlv_parse_mode* mod
         sprintf(tmp, "%s%s", base->resources_path, new_path);
         free(new_path);
         free(current_scene->resources_path);
-        cdlv_strdup(&current_scene->resources_path, tmp, strlen(tmp));
+        cdlv_strdup(&current_scene->resources_path, tmp, strlen(tmp)+1);
         printf(" %s", current_scene->resources_path);
         cdlv_err(result);
     } else if(strstr(line, cdlv_tag_define_resources)) {
@@ -258,7 +258,7 @@ static inline cdlv_error parse_nprefix_line(cdlv* base, cdlv_parse_mode* mode, c
                 cdlv_err(cdlv_ok);
             }
             printf("\t-- adding to script");
-            SCL_ARRAY_ADD((*scene)->script, line, char*);
+            SCL_ARRAY_ADD((*scene)->script, (char*)line, char*);
             break;
         case cdlv_parse_scene_resources:
             if((res = parse_scene_resource(base, mode, line, scene)) != cdlv_ok) {

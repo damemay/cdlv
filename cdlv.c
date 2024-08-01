@@ -40,7 +40,6 @@ static inline cdlv_error extract_path(cdlv* base, const char* path) {
 
 cdlv_error cdlv_add_script(cdlv* base, const char* path) {
     cdlv_error res;
-    size_t lines;
     char* script = NULL;
 
     if((res = extract_path(base, path)) != cdlv_ok) {
@@ -68,11 +67,13 @@ static inline int load_global_resources(void *key, int count, void **value, void
     cdlv_resource* resource = (cdlv_resource*)*value;
     loader_args* args = (loader_args*)user;
     cdlv_resource_load(args->base, resource, args->renderer);
+    return 1;
 }
 
 static inline int unload_global_resources(void *key, int count, void **value, void *user) {
     cdlv_resource* resource = (cdlv_resource*)*value;
     cdlv_resource_unload(resource);
+    return 1;
 }
 
 cdlv_error cdlv_play(cdlv* base, SDL_Renderer* renderer) {
@@ -82,15 +83,17 @@ cdlv_error cdlv_play(cdlv* base, SDL_Renderer* renderer) {
     };
     dic_forEach(base->resources, load_global_resources, &args);
     base->is_playing = true;
+    cdlv_err(cdlv_ok);
 }
 
 cdlv_error cdlv_loop(cdlv* base, SDL_Renderer* renderer) {
-
+    cdlv_err(cdlv_ok);
 }
 
 cdlv_error cdlv_stop(cdlv* base) {
     base->is_playing = false;
     dic_forEach(base->resources, unload_global_resources, NULL);
+    cdlv_err(cdlv_ok);
 }
 
 void cdlv_free(cdlv* base) {

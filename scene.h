@@ -13,6 +13,6 @@ typedef struct cdlv_scene {
 
 cdlv_error cdlv_scene_new(cdlv* base, const char* resource_path, cdlv_scene** scene);
 void cdlv_scene_free(cdlv_scene* scene);
-int cdlv_scenes_free(cdlv_dict* scenes);
+void cdlv_scenes_free(cdlv_dict* scenes);
 
 #endif

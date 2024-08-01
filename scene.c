@@ -15,7 +15,7 @@ cdlv_error cdlv_scene_new(cdlv* base, const char* resource_path, cdlv_scene** sc
         cdlv_log("Could not allocate memory for new scene's script");
         cdlv_err(cdlv_memory_error);
     }
-    int res = scl_array_init(new_scene->script, 128, sizeof(char*));
+    scl_array_init(new_scene->script, 128, sizeof(char*));
     *scene = new_scene;
     cdlv_err(cdlv_ok);
 }
@@ -31,9 +31,10 @@ void cdlv_scene_free(cdlv_scene* scene) {
 static inline int free_scene(void *key, int count, void **value, void *user) {
     cdlv_scene* scene = (cdlv_scene*)*value;
     cdlv_scene_free(scene);
+    return 1;
 }
 
-int cdlv_scenes_free(cdlv_dict* scenes) {
+void cdlv_scenes_free(cdlv_dict* scenes) {
     dic_forEach(scenes, free_scene, NULL);
     dic_delete(scenes);
 }

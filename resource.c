@@ -51,7 +51,7 @@ static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* res
         cdlv_logv("Could not find video stream in video file: %s", resource->path);
         cdlv_err(cdlv_video_error);
     }
-    resource->video->codec = avcodec_find_decoder(resource->video->format_context->streams[resource->video->video_stream]->codecpar->codec_id);
+    resource->video->codec = (AVCodec*)avcodec_find_decoder(resource->video->format_context->streams[resource->video->video_stream]->codecpar->codec_id);
     if(!resource->video->codec) {
         cdlv_logv("Detected unsupported codec in video file: %s", resource->path);
         cdlv_err(cdlv_video_error);
@@ -91,6 +91,8 @@ static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* res
     av_image_fill_arrays(resource->video->picture->data, resource->video->picture->linesize, resource->video->buffer, AV_PIX_FMT_YUV420P, resource->video->codec_context->width, resource->video->codec_context->height, 32);
     resource->video->rect.w = resource->video->codec_context->width;
     resource->video->rect.h = resource->video->codec_context->height;
+    double fps = av_q2d(resource->video->format_context->streams[resource->video->video_stream]->r_frame_rate);
+    resource->video->sleep_time = 1.0/(double)fps;
 
     cdlv_err(cdlv_ok);
 }
@@ -148,9 +150,10 @@ void cdlv_resource_free(cdlv_resource* resource) {
 static inline int free_res(void *key, int count, void **value, void *user) {
     cdlv_resource* res = (cdlv_resource*)*value;
     cdlv_resource_free(res);
+    return 1;
 }
 
-int cdlv_resources_free(cdlv_dict* resources) {
+void cdlv_resources_free(cdlv_dict* resources) {
     dic_forEach(resources, free_res, NULL);
     dic_delete(resources);
 }
