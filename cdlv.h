@@ -12,6 +12,7 @@ typedef enum {
     cdlv_read_error,
     cdlv_video_error,
     cdlv_parse_error,
+    cdlv_fatal_error,
 } cdlv_error;
 
 typedef struct cdlv_text {
@@ -49,18 +50,22 @@ typedef struct cdlv {
     cdlv_error error;
     char log[cdlv_max_string_size];
 
-    uint64_t c_tick, l_tick;
-    float e_ticks;
-    float accum;
-
     uint16_t width, height;
 
     cdlv_config config;
-    cdlv_text* text;
+
     cdlv_dict* scenes;
     uint16_t scene_count;
+
+    uint16_t current_line;
+    uint16_t current_scene_index;
+    void* current_scene;
+    void* current_bg;
+
     char* resources_path;
     cdlv_dict* resources;
+
+    cdlv_text* text;
 } cdlv;
 
 void cdlv_init(cdlv* base, uint16_t width, uint16_t height);
@@ -68,6 +73,7 @@ void cdlv_set_config(cdlv* base, const cdlv_config config);
 cdlv_error cdlv_add_script(cdlv* base, const char* path);
 
 cdlv_error cdlv_play(cdlv* base, SDL_Renderer* renderer);
+cdlv_error cdlv_event(cdlv* base, SDL_Renderer* renderer, SDL_Event event);
 cdlv_error cdlv_loop(cdlv* base, SDL_Renderer* renderer);
 cdlv_error cdlv_stop(cdlv* base);
 

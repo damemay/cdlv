@@ -19,4 +19,12 @@
     strcpy(*dest, src);                         \
 }
 
+cdlv_error cdlv_extract_from_quotes(cdlv* base, const char* line, char** output);
+cdlv_error cdlv_extract_non_quote(cdlv* base, const char* line, char** output);
+cdlv_error cdlv_extract_filename(cdlv* base, const char* line, char** output);
+cdlv_error cdlv_extract_resource_kv(cdlv* base, const char* line, char** key, char** value);
+cdlv_error cdlv_strcat_new(cdlv* base, const char* first, const char* second, char** output);
+cdlv_error cdlv_add_new_resource(cdlv* base, const char* base_path, const char* line, cdlv_dict* resources);
+cdlv_error cdlv_add_new_resource_from_path(cdlv* base, const char* base_path, const char* name, const char* path, cdlv_dict* resources);
+
 #endif

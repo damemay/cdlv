@@ -4,6 +4,7 @@
 #include "util.h"
 #include "resource.h"
 #include "scene.h"
+#include "play.h"
 
 void cdlv_init(cdlv* base, uint16_t width, uint16_t height) {
     base->error = 0;
@@ -79,7 +80,15 @@ cdlv_error cdlv_play(cdlv* base, SDL_Renderer* renderer) {
     cdlv_err(cdlv_ok);
 }
 
+cdlv_error cdlv_event(cdlv* base, SDL_Renderer* renderer, SDL_Event event) {
+    cdlv_error res;
+    if((res = cdlv_key_handler(base, renderer, event)) != cdlv_ok) cdlv_err(res);
+    cdlv_err(cdlv_ok);
+}
+
 cdlv_error cdlv_loop(cdlv* base, SDL_Renderer* renderer) {
+    cdlv_error res;
+    if((res = cdlv_play_loop(base, renderer)) != cdlv_ok) cdlv_err(res);
     cdlv_err(cdlv_ok);
 }
 

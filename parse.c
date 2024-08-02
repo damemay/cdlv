@@ -7,99 +7,9 @@ static inline size_t strspn_whitespace(const char* line) {
     return strspn(line, " \t");
 }
 
-static inline char* find_first_whitespace(const char* line) {
-    char* whitespace = strchr(line, ' ');
-    if(whitespace) return whitespace;
-    whitespace = strchr(line, '\t');
-    if(whitespace) return whitespace;
-    return NULL;
-}
-
-static inline cdlv_error extract_from_quotes(cdlv* base, const char* line, char** output) {
-    char* quote_open = strchr(line, '\"');
-    if(!quote_open) {
-        cdlv_logv("Did not find opening quote on line: %s", line);
-        cdlv_err(cdlv_parse_error);
-    }
-    char* quote_close = strrchr(line, '\"');
-    if(!quote_close) {
-        cdlv_logv("Did not find closing quote on line: %s", line);
-        cdlv_err(cdlv_parse_error);
-    }
-    char str_content[quote_close-quote_open];
-    sprintf(str_content, "%.*s", (int)(quote_close-quote_open-1), quote_open+1);
-    cdlv_strdup(output, str_content, quote_close-quote_open);
-    cdlv_err(cdlv_ok);
-}
-
-static inline cdlv_error extract_non_quote(cdlv* base, const char* line, char** output) {
-    char* start_position = NULL;
-    bool scene_name = line[0] == '!' ? true : false;
-    if(scene_name) start_position = find_first_whitespace(line);
-    else start_position = (char*)line;
-    char* end_position = find_first_whitespace(start_position+1);
-    if(!end_position) {
-        cdlv_logv("Did not find name on line: %s", line);
-        cdlv_err(cdlv_parse_error);
-    }
-    size_t size = scene_name ? end_position-start_position : end_position-start_position + 1;
-    char str_content[size];
-    sprintf(str_content, "%.*s", (int)size-1, scene_name ? start_position+1 : start_position);
-    cdlv_strdup(output, str_content, size);
-    cdlv_err(cdlv_ok);
-}
-
-static inline cdlv_error extract_filename(cdlv* base, const char* line, char** output) {
-    char* dot_position = strchr(line, '.');
-    if(!dot_position) {
-        cdlv_logv("Did not find filename on line: %s", line);
-        cdlv_err(cdlv_parse_error);
-    }
-    size_t size = dot_position-line+1;
-    char str_content[size];
-    sprintf(str_content, "%.*s", (int)(size-1), line);
-    cdlv_strdup(output, str_content, size);
-    cdlv_err(cdlv_ok);
-}
-
-static inline cdlv_error extract_resource_kv(cdlv* base, const char* line, char** key, char** value) {
-    cdlv_error res;
-    if(line[0] == '\"') {
-        if((res = extract_from_quotes(base, line, value)) != cdlv_ok) cdlv_err(res);
-        if((res = extract_filename(base, *value, key)) != cdlv_ok) cdlv_err(res);
-        cdlv_err(cdlv_ok);
-    } else {
-        if((res = extract_non_quote(base, line, key)) != cdlv_ok) cdlv_err(res);
-        if((res = extract_from_quotes(base, line, value)) != cdlv_ok) cdlv_err(res);
-        cdlv_err(cdlv_ok);
-    }
-    cdlv_logv("Could not parse resource: %s", line);
-    cdlv_err(cdlv_parse_error);
-}
-
-static inline cdlv_error strcat_new(cdlv* base, const char* first, const char* second, char** output) {
-    char new[strlen(first)+strlen(second)+1];
-    sprintf(new, "%s%s", first, second);
-    if(*output != NULL) free(*output);
-    cdlv_strdup(output, new, strlen(new)+1);
-    cdlv_err(cdlv_ok);
-}
-
-static inline cdlv_error add_new_resource(cdlv* base, const char* base_path, const char* line, cdlv_dict* resources) {
-    cdlv_error res;
-    char* key, *path;
-    cdlv_resource* resource;
-    if((res = extract_resource_kv(base, line, &key, &path)) != cdlv_ok) cdlv_err(res);
-    if((res = strcat_new(base, base_path, path, &path)) != cdlv_ok) cdlv_err(res);
-    if((res = cdlv_resource_new(base, cdlv_resource_image, path, &resource)) != cdlv_ok) cdlv_err(res);
-    dic_add(resources, key, strlen(key));
-    *resources->value = resource;
-    cdlv_err(cdlv_ok);
-}
-
 static inline cdlv_error add_new_scene(cdlv* base, const char* line, cdlv_scene** scene) {
     char* name = NULL;
-    cdlv_error result = extract_non_quote(base, line, &name);
+    cdlv_error result = cdlv_extract_non_quote(base, line, &name);
     if(result != cdlv_ok) cdlv_err(result);
     cdlv_scene* new_scene;
     if((result = cdlv_scene_new(base, base->resources_path, &new_scene)) != cdlv_ok) cdlv_err(result);
@@ -117,16 +27,16 @@ static inline cdlv_error parse_global_resource(cdlv* base, cdlv_parse_mode* mode
         cdlv_err(cdlv_ok);
     }
     cdlv_error res;
-    if((res = add_new_resource(base, base->resources_path, line, base->resources)) != cdlv_ok) cdlv_err(res);
+    if((res = cdlv_add_new_resource(base, base->resources_path, line, base->resources)) != cdlv_ok) cdlv_err(res);
     cdlv_err(cdlv_ok);
 }
 
 static inline cdlv_error parse_global_definition(cdlv* base, cdlv_parse_mode* mode, const char* line, cdlv_scene** scene) {
     if(strstr(line, cdlv_tag_define_resources_path)) {
         char* new_path;
-        cdlv_error result = extract_from_quotes(base, line, &new_path);
+        cdlv_error result = cdlv_extract_from_quotes(base, line, &new_path);
         if(result != cdlv_ok) cdlv_err(result);
-        if((result = strcat_new(base, base->resources_path, new_path, &base->resources_path)) != cdlv_ok) cdlv_err(result);
+        if((result = cdlv_strcat_new(base, base->resources_path, new_path, &base->resources_path)) != cdlv_ok) cdlv_err(result);
         free(new_path);
         cdlv_err(result);
     } else if(strstr(line, cdlv_tag_define_resources)) {
@@ -150,7 +60,7 @@ static inline cdlv_error parse_scene_resource(cdlv* base, cdlv_parse_mode* mode,
     }
     cdlv_scene* current_scene = *scene;
     cdlv_error res;
-    if((res = add_new_resource(base, current_scene->resources_path, line, current_scene->resources)) != cdlv_ok) cdlv_err(res);
+    if((res = cdlv_add_new_resource(base, current_scene->resources_path, line, current_scene->resources)) != cdlv_ok) cdlv_err(res);
     cdlv_err(cdlv_ok);
 }
 
@@ -158,9 +68,9 @@ static inline cdlv_error parse_scene_definition(cdlv* base, cdlv_parse_mode* mod
     cdlv_scene* current_scene = *scene;
     if(strstr(line, cdlv_tag_define_resources_path)) {
         char* new_path;
-        cdlv_error result = extract_from_quotes(base, line, &new_path);
+        cdlv_error result = cdlv_extract_from_quotes(base, line, &new_path);
         if(result != cdlv_ok) cdlv_err(result);
-        if((result = strcat_new(base, base->resources_path, new_path, &current_scene->resources_path)) != cdlv_ok) cdlv_err(result);
+        if((result = cdlv_strcat_new(base, base->resources_path, new_path, &current_scene->resources_path)) != cdlv_ok) cdlv_err(result);
         free(new_path);
         cdlv_err(result);
     } else if(strstr(line, cdlv_tag_define_resources)) {
@@ -195,6 +105,13 @@ static inline cdlv_error parse_definition(cdlv* base, cdlv_parse_mode* mode, con
     cdlv_err(cdlv_ok);
 }
 
+static inline cdlv_error add_script_line(cdlv* base, cdlv_scene* scene, const char* line) {
+    char* dup_line;
+    cdlv_strdup(&dup_line, line, strlen(line)+1);
+    SCL_ARRAY_ADD(scene->script, dup_line, char*);
+    cdlv_err(cdlv_ok);
+}
+
 static inline cdlv_error parse_nprefix_line(cdlv* base, cdlv_parse_mode* mode, const char* line, cdlv_scene** scene) {
     cdlv_parse_mode current_mode = *mode;
     cdlv_error res;
@@ -211,7 +128,8 @@ static inline cdlv_error parse_nprefix_line(cdlv* base, cdlv_parse_mode* mode, c
                 *mode = cdlv_parse_global;
                 cdlv_err(cdlv_ok);
             }
-            SCL_ARRAY_ADD((*scene)->script, (char*)line, char*);
+            if(!strlen(line)) break;
+            if((res = add_script_line(base, *scene, line)) != cdlv_ok) cdlv_err(res);
             break;
         case cdlv_parse_scene_resources:
             if((res = parse_scene_resource(base, mode, line, scene)) != cdlv_ok) cdlv_err(res);

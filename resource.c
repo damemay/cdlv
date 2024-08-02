@@ -105,6 +105,7 @@ cdlv_error cdlv_resource_load(cdlv* base, cdlv_resource* resource, SDL_Renderer*
         if((res = cdlv_resource_video_load(base, resource, renderer)) != cdlv_ok) cdlv_err(res);
     }
     resource->loaded = true;
+    printf("loaded resource: %s\n", resource->path);
     cdlv_err(cdlv_ok);
 }
 

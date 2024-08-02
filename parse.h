@@ -8,6 +8,8 @@
 #define cdlv_tag_define_scene "!scene"
 
 #define cdlv_tag_prompt_bg "@bg"
+#define cdlv_tag_time_loop " loop"
+#define cdlv_tag_time_once " once"
 
 #define cdlv_tag_opening "{"
 #define cdlv_tag_closure "}"

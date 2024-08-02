@@ -16,6 +16,7 @@ endif()
     
 add_library(${PROJECT_NAME} STATIC
     cdlv.c
+    util.c
     parse.c
     resource.c
     scene.c
