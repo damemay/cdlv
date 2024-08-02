@@ -1,26 +1,42 @@
 # cdlv
 Simple SDL2-based library and scripting system for ADV/VN style games made in pure C.
 
-~~The goal was to create as lowest resource usage engine as possible. This is why the scripting system divides every data-heavy behavior into scenes with separately loaded resources.~~
-
 Easy to implement into existing SDL2-based application.
 
 ## Features
 - **Simple C-inspired scripting language**
 - **Compiles to static library**
+- **Supports various image and video formats thanks to SDL2_image and ffmpeg**
 
 ## Example
-Refer to [main.c](main.c) and [res/sample/sample.cdlv](res/sample/sample.cdlv).
+```
+!resources_path "images/"
+!resources {
+    "black.png"
+	"cloudy_sky.png"
+    "sky_clearing.mp4"
+    "sunny_sky.png"
+}
+!scene countdown {
+	@bg cloudy_sky
+    "I don't like rainy days. I hope it will get sunnier soon..."
+    @bg black
+    Later that day...
+	@bg sky_clearing once
+    @bg cloudy_sky
+    "Ah, there's the sun! I'm already feeling better!"
+}
+```
+Refer to [main.c](main.c) and [res/sample/sample.cdlv](res/sample/sample.cdlv) for a full sample documented app.
 
 ## Building
-Building requires SDL2, SDL2_image and SDL2_ttf installed on system.
+Building requires SDL2, SDL2_image and SDL2_ttf and ffmpeg libraries installed on system.
 
 ```
 git clone https://github.com/damemay/cdlv.git
 cd cdlv
 mkdir build && cd build
-# Linux & MacOS:
 cmake .. && make
 ```
 
-Above will build `cdlv-menu` and static library `libcdlv.a`
+Above will build `cdlv-sample` and static library `libcdlv.a`
