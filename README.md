@@ -13,16 +13,16 @@ Easy to implement into existing SDL2-based application.
 !resources_path "images/"
 !resources {
     "black.png"
-	"cloudy_sky.png"
+    "cloudy_sky.png"
     "sky_clearing.mp4"
     "sunny_sky.png"
 }
 !scene countdown {
-	@bg cloudy_sky
+    @bg cloudy_sky
     "I don't like rainy days. I hope it will get sunnier soon..."
     @bg black
     Later that day...
-	@bg sky_clearing once
+    @bg sky_clearing once
     @bg cloudy_sky
     "Ah, there's the sun! I'm already feeling better!"
 }
