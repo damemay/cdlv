@@ -26,7 +26,7 @@ typedef struct cdlv_video {
     int video_stream;
     SDL_Rect rect;
     SDL_Texture* texture;
-    double sleep_time;
+    double fps;
 } cdlv_video;
 
 typedef struct cdlv_resource {
@@ -37,6 +37,8 @@ typedef struct cdlv_resource {
         SDL_Texture* image;
         cdlv_video* video;
     };
+    bool is_playing;
+    bool loop;
 } cdlv_resource;
 
 cdlv_error cdlv_resource_new(cdlv* base, const cdlv_resource_type type, char* path, cdlv_resource** resource);

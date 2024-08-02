@@ -56,9 +56,6 @@ int main(int argc, char* argv[]) {
     cdlv_add_script(&base, "../res/sample/sample.cdlv");
     error(&base);
 
-    //if(dic_find(base.resources, "empty", 5)) printf("empty => %s\n", *base.resources->value);
-    //else printf("not found\n");
-
     cdlv_play(&base, _renderer);
     error(&base);
 
@@ -67,56 +64,17 @@ int main(int argc, char* argv[]) {
     printf("scenes:\n");
     dic_forEach(base.scenes, foreach_scene, NULL);
 
-    // cdlv_resource r = {
-    //     .path = "",
-    //     .type = cdlv_resource_video,
-    // };
-    // cdlv_resource_load(&base, &r, _renderer);
-    // error(&base);
-    // int ret = 0;
-    // bool loop = false;
-    // bool is_playing = true;
-    // while(is_playing) {
-    //     if((ret = av_read_frame(r.video->format_context, r.video->packet)) == AVERROR_EOF) {
-    //         if(!loop) {
-    //             is_playing = false;
-    //             break;
-    //         }
-    //         av_seek_frame(r.video->format_context, r.video->video_stream, 0, 0);
-    //         av_packet_unref(r.video->packet);
-    //         continue;
-    //     }
-    //     if(r.video->packet->stream_index == r.video->video_stream) {
-    //         if((ret = avcodec_send_packet(r.video->codec_context, r.video->packet)) < 0) {
-    //             char buf[cdlv_max_string_size];
-    //             av_strerror(ret, buf, cdlv_max_string_size);
-    //             puts(buf);
-    //             puts("error sending packet for decoding"), exit(1);
-    //         }
-    //         while(ret >= 0) {
-    //             ret = avcodec_receive_frame(r.video->codec_context,r.video->frame);
-    //             if(ret==AVERROR(EAGAIN)||ret==AVERROR_EOF) break;
-    //             else if(ret<0) puts("error while decoding"), exit(1);
-    //             sws_scale(r.video->sws_context, (uint8_t const* const*)r.video->frame->data, r.video->frame->linesize, 0, r.video->codec_context->height, r.video->picture->data, r.video->picture->linesize);
-    //             SDL_Delay((1000*r.video->sleep_time)-10);
-    //             SDL_UpdateYUVTexture(r.video->texture, &r.video->rect, r.video->picture->data[0], r.video->picture->linesize[0], r.video->picture->data[1], r.video->picture->linesize[1], r.video->picture->data[2], r.video->picture->linesize[2]);
-    //             SDL_RenderClear(_renderer);
-    //             SDL_RenderCopy(_renderer, r.video->texture, NULL, NULL);
-    //             SDL_RenderPresent(_renderer);
-    //         }
-    //     }
-    //     av_packet_unref(r.video->packet);
-    // }
-    // cdlv_resource_unload(&r);
-
     bool _running = true;
-    while(_running) {
+    while(_running&&base.is_playing) {
         while(SDL_PollEvent(&event) != 0) {
             if(event.type == SDL_QUIT) {
                 _running = false;
                 break;
             }
-            cdlv_event(&base, _renderer, event);
+            if(base.is_playing) {
+                cdlv_event(&base, _renderer, event);
+                error(&base);
+            }
         }
         SDL_RenderClear(_renderer);
         if(base.is_playing) {
@@ -126,7 +84,6 @@ int main(int argc, char* argv[]) {
         SDL_RenderPresent(_renderer);
     }
 
-    cdlv_stop(&base);
     cdlv_free(&base);
 
     SDL_DestroyRenderer(_renderer);

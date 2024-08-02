@@ -63,6 +63,10 @@ void cdlv_scene_free(cdlv_scene* scene) {
     if(scene->loaded) cdlv_scene_unload(scene);
     free(scene->resources_path);
     cdlv_resources_free(scene->resources);
+    for(size_t i=0; i<scene->script->size; i++) {
+        char* line = SCL_ARRAY_GET(scene->script, i, char*);
+        free(line);
+    }
     scl_array_free(scene->script);
     free(scene->script);
     free(scene);

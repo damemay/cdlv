@@ -8,9 +8,14 @@
 
 void cdlv_init(cdlv* base, uint16_t width, uint16_t height) {
     base->error = 0;
+    base->call_stop = 0;
     base->scene_count = 0;
     base->width = width;
     base->height = height;
+    base->current_tick = SDL_GetTicks64();
+    base->last_tick = SDL_GetTicks64();
+    base->elapsed_ticks = 0.0f;
+    base->accum = 0.0f;
     base->resources = dic_new(0);
     base->scenes = dic_new(0);
 }

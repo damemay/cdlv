@@ -43,7 +43,7 @@ void __scl_array_del_realloc(scl_array* array);
 })
 
 #define SCL_ARRAY_GET(ARRAY, INDEX, TYPE) ({ \
-    TYPE __SCL_RETURN_DATA__; \
+    TYPE __SCL_RETURN_DATA__ = 0; \
     if(__scl_array_index_exists(ARRAY, INDEX)) { \
 	TYPE* __SCL_DATA__ = (TYPE*)ARRAY->data; \
 	__SCL_RETURN_DATA__ = __SCL_DATA__[INDEX]; \

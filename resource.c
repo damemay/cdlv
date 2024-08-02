@@ -91,8 +91,7 @@ static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* res
     av_image_fill_arrays(resource->video->picture->data, resource->video->picture->linesize, resource->video->buffer, AV_PIX_FMT_YUV420P, resource->video->codec_context->width, resource->video->codec_context->height, 32);
     resource->video->rect.w = resource->video->codec_context->width;
     resource->video->rect.h = resource->video->codec_context->height;
-    double fps = av_q2d(resource->video->format_context->streams[resource->video->video_stream]->r_frame_rate);
-    resource->video->sleep_time = 1.0/(double)fps;
+    resource->video->fps = av_q2d(resource->video->format_context->streams[resource->video->video_stream]->r_frame_rate);
 
     cdlv_err(cdlv_ok);
 }

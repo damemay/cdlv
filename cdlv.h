@@ -44,6 +44,7 @@ typedef struct cdlv_config {
 } cdlv_config;
 
 typedef struct cdlv {
+    bool call_stop;
     bool is_playing;
     bool can_interact;
 
@@ -61,6 +62,9 @@ typedef struct cdlv {
     uint16_t current_scene_index;
     void* current_scene;
     void* current_bg;
+
+    uint64_t current_tick, last_tick;
+    float accum, elapsed_ticks;
 
     char* resources_path;
     cdlv_dict* resources;
