@@ -21,6 +21,7 @@ add_library(${PROJECT_NAME} STATIC
     resource.c
     scene.c
     file.c
+    text.c
     hashdict.c/hashdict.c
     array.c
 )

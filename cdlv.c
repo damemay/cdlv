@@ -5,6 +5,7 @@
 #include "resource.h"
 #include "scene.h"
 #include "play.h"
+#include "text.h"
 
 void cdlv_init(cdlv* base, uint16_t width, uint16_t height) {
     base->error = 0;
@@ -18,6 +19,7 @@ void cdlv_init(cdlv* base, uint16_t width, uint16_t height) {
     base->accum = 0.0f;
     base->resources = dic_new(0);
     base->scenes = dic_new(0);
+    base->can_interact = true;
 }
 
 void cdlv_set_config(cdlv* base, const cdlv_config config) {
@@ -81,6 +83,18 @@ cdlv_error cdlv_play(cdlv* base, SDL_Renderer* renderer) {
         .renderer = renderer,
     };
     dic_forEach(base->resources, load_global_resources, &args);
+    cdlv_error res;
+    cdlv_vec2 xy = {
+        .x = base->config.text_xy.x,
+        .y = base->config.text_xy.y,
+    };
+    cdlv_color color = {
+        .r = base->config.text_color.r,
+        .g = base->config.text_color.g,
+        .b = base->config.text_color.b,
+        .a = base->config.text_color.a,
+    };
+    if((res = cdlv_text_create(base, base->config.text_font, base->config.text_size, base->config.text_wrap, xy, color, renderer)) != cdlv_ok) cdlv_err(res);
     base->is_playing = true;
     cdlv_err(cdlv_ok);
 }
@@ -100,6 +114,7 @@ cdlv_error cdlv_loop(cdlv* base, SDL_Renderer* renderer) {
 cdlv_error cdlv_stop(cdlv* base) {
     base->is_playing = false;
     dic_forEach(base->resources, unload_global_resources, NULL);
+    cdlv_text_free((cdlv_text*)base->text);
     cdlv_err(cdlv_ok);
 }
 

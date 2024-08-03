@@ -15,23 +15,6 @@ typedef enum {
     cdlv_fatal_error,
 } cdlv_error;
 
-typedef struct cdlv_text {
-    SDL_Texture* tex;
-    TTF_Font* font;
-    SDL_Rect* glyphs;
-    SDL_Color color;
-    SDL_Color bg;
-    char content[cdlv_max_string_size];
-    uint16_t content_size;
-    uint8_t font_size;
-    uint16_t x, y;
-    uint16_t w, h;
-    uint16_t wrap;
-    char rendered[cdlv_max_string_size];
-    uint16_t current_char;
-    float accum;
-} cdlv_text;
-
 typedef struct cdlv_config {
     char text_font[cdlv_max_string_size];
     uint8_t text_size;
@@ -69,7 +52,7 @@ typedef struct cdlv {
     char* resources_path;
     cdlv_dict* resources;
 
-    cdlv_text* text;
+    void* text;
 } cdlv;
 
 void cdlv_init(cdlv* base, uint16_t width, uint16_t height);

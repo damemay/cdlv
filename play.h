@@ -5,6 +5,7 @@
 #include "util.h"
 #include "scene.h"
 #include "parse.h"
+#include "text.h"
 
 typedef struct {
     uint16_t index;
@@ -90,7 +91,6 @@ static inline cdlv_error cdlv_parse_prompt(cdlv* base, const char* line, cdlv_sc
 
 static inline cdlv_error cdlv_play_video(cdlv* base, cdlv_video* video, SDL_Renderer* renderer) {
     int ret = 0;
-    //cdlv_resource* resource = (cdlv_resource*)base->current_bg;
     if(video->is_playing) {
         base->accum += base->elapsed_ticks * video->fps;
         if(base->accum > 1) {
@@ -147,6 +147,7 @@ static inline cdlv_error cdlv_render(cdlv* base, SDL_Renderer* renderer) {
         if((res = cdlv_play_video(base, bg->video, renderer)) != cdlv_ok) cdlv_err(res);
         SDL_RenderCopy(renderer, bg->video->texture, NULL, NULL);
     }
+    if(base->can_interact && base->is_playing) cdlv_text_render(base, renderer);
     cdlv_err(cdlv_ok);
 }
 
@@ -166,32 +167,46 @@ static inline cdlv_error cdlv_parse_scene_line(cdlv* base, cdlv_scene* scene, SD
     } else if(base->current_line < scene->script->size) {
         char* line = SCL_ARRAY_GET(scene->script, base->current_line, char*);
         if(!line) cdlv_err(cdlv_fatal_error);
-        printf("%s\n",line);
         if(line[0] == '@') {
             if((res = cdlv_parse_prompt(base, line, scene, renderer)) != cdlv_ok) cdlv_err(res);
             ++base->current_line;
             if((res = cdlv_parse_scene_line(base, scene, renderer)) != cdlv_ok) cdlv_err(res);
-        } // else cdlv_text_update
+        } else {
+            cdlv_text_update(base, line);
+        }
     }
     cdlv_err(cdlv_ok);
 }
 
-static inline cdlv_error cdlv_key_handler(cdlv* base, SDL_Renderer* renderer, SDL_Event event) {
+static inline cdlv_error cdlv_user_update(cdlv* base, SDL_Renderer* renderer) {
+    cdlv_text* text = (cdlv_text*)base->text;
+    if(text->current_char != text->content_size) {
+        strcpy(text->rendered, text->content);
+        text->current_char = text->content_size;
+        cdlv_err(cdlv_ok);
+    }
+
     cdlv_error res;
     cdlv_scene* scene = (cdlv_scene*)base->current_scene;
+    ++base->current_line;
+    if((res = cdlv_parse_scene_line(base, scene, renderer)) != cdlv_ok) cdlv_err(res);
+    cdlv_err(cdlv_ok);
+}
+
+static inline cdlv_error cdlv_key_handler(cdlv* base, SDL_Renderer* renderer, SDL_Event event) {
+    if(!base->can_interact) cdlv_err(cdlv_ok);
+    cdlv_error res;
     if(event.type == SDL_KEYUP && event.key.repeat == 0) {
         switch(event.key.keysym.sym) {
                 case SDLK_RETURN:
-                    ++base->current_line;
-                    if((res = cdlv_parse_scene_line(base, scene, renderer)) != cdlv_ok) cdlv_err(res);
+                    if((res = cdlv_user_update(base, renderer)) != cdlv_ok) cdlv_err(res);
                     break;
         }
     }
     if(event.type == SDL_CONTROLLERBUTTONUP) {
         switch(event.cbutton.button) {
                 case SDL_CONTROLLER_BUTTON_A:
-                    ++base->current_line;
-                    if((res = cdlv_parse_scene_line(base, scene, renderer)) != cdlv_ok) cdlv_err(res);
+                    if((res = cdlv_user_update(base, renderer)) != cdlv_ok) cdlv_err(res);
                     break;
         }
     }
@@ -199,6 +214,7 @@ static inline cdlv_error cdlv_key_handler(cdlv* base, SDL_Renderer* renderer, SD
 }
 
 static inline cdlv_error cdlv_play_loop(cdlv* base, SDL_Renderer* renderer) {
+    if(!base->is_playing) cdlv_err(cdlv_ok);
     cdlv_error res;
     base->current_tick = SDL_GetTicks64();
     base->elapsed_ticks = (base->current_tick - base->last_tick) / 1000.0f;
