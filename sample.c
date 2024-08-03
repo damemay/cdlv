@@ -9,7 +9,7 @@
 
 #define _width 960
 #define _height 544
-#define _title "cdlv2"
+#define _title "cdlv2 sample"
 
 void error(cdlv* base) {
     if(base->error == cdlv_ok) return;
@@ -40,6 +40,7 @@ int foreach_scene(void *key, int count, void **value, void *user) {
 }
 
 int main(int argc, char* argv[]) {
+    // Initialize your SDL2, SDL2_image, SDL2_ttf:
     SDL_Init(SDL_INIT_VIDEO);
     IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
     TTF_Init();
@@ -47,15 +48,20 @@ int main(int argc, char* argv[]) {
     SDL_Window* _window = SDL_CreateWindow(_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, _width, _height, SDL_WINDOW_SHOWN);
     SDL_Renderer* _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC|SDL_RENDERER_TARGETTEXTURE);
 
+    // Initialize CDLV "base":
     cdlv base = {0};
     cdlv_init(&base, _width, _height);
 
+    // Setup your config. It can be empty for defaults.
     cdlv_config config = {0};
     cdlv_set_config(&base, config);
 
+    // Add script - it will load in all text data and create structures.
     cdlv_add_script(&base, "../res/sample/sample.cdlv");
     error(&base);
 
+    // cdlv_play loads global resources and first scene's resources.
+    // Sets cdlv.is_playing to true.
     cdlv_play(&base, _renderer);
     error(&base);
 
@@ -71,12 +77,14 @@ int main(int argc, char* argv[]) {
                 _running = false;
                 break;
             }
+            // Add cdlv_event into your event polling loop for keyhandling:
             if(base.is_playing) {
                 cdlv_event(&base, _renderer, event);
                 error(&base);
             }
         }
         SDL_RenderClear(_renderer);
+        // Add cdlv_loop between your SDL_RenderClear and SDL_RenderPresent:
         if(base.is_playing) {
             cdlv_loop(&base, _renderer);
             error(&base);
@@ -84,6 +92,10 @@ int main(int argc, char* argv[]) {
         SDL_RenderPresent(_renderer);
     }
 
+    // cdlv_free will free all data and structures of cdlv.
+    // Use it only when you're done with cdlv in program.
+    // If you want to change game state from CDLV to something else,
+    // it's better to use cdlv_stop(cdlv*).
     cdlv_free(&base);
 
     SDL_DestroyRenderer(_renderer);

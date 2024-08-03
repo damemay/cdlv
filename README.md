@@ -6,7 +6,7 @@ Easy to implement into existing SDL2-based application.
 ## Features
 - **Simple C-inspired scripting language**
 - **Compiles to static library**
-- **Supports various image and video formats thanks to SDL2_image and ffmpeg**
+- **Supports various image and video formats with SDL2_image and ffmpeg**
 
 ## Example
 ```
@@ -27,7 +27,7 @@ Easy to implement into existing SDL2-based application.
     "Ah, there's the sun! I'm already feeling better!"
 }
 ```
-Refer to [main.c](main.c) and [res/sample/sample.cdlv](res/sample/sample.cdlv) for a full sample documented app.
+Refer to [sample.c](sample.c) and [res/sample/sample.cdlv](res/sample/sample.cdlv) for a full sample documented app.
 
 ## Building
 Building requires SDL2, SDL2_image and SDL2_ttf and ffmpeg libraries installed on system.
