@@ -31,6 +31,9 @@ static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* res
         cdlv_err(cdlv_memory_error);
     }
     resource->video->format_context = NULL;
+    resource->video->is_playing = false;
+    resource->video->loop = false;
+    resource->video->eof = false;
     if(avformat_open_input(&resource->video->format_context, resource->path, NULL, NULL) < 0) {
         cdlv_logv("Could not open video file: %s", resource->path);
         cdlv_err(cdlv_file_error);
@@ -84,11 +87,6 @@ static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* res
         cdlv_log("Could not allocate memory for video packet");
         cdlv_err(cdlv_memory_error);
     }
-    resource->video->sws_context = sws_getContext(resource->video->codec_context->width, resource->video->codec_context->height, resource->video->codec_context->pix_fmt, resource->video->codec_context->width, resource->video->codec_context->height, AV_PIX_FMT_YUV420P, SWS_BILINEAR, NULL, NULL, NULL);
-    int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, resource->video->codec_context->width, resource->video->codec_context->height, 32);
-    resource->video->buffer = av_malloc(num_bytes*sizeof(uint8_t));
-    resource->video->picture = av_frame_alloc();
-    av_image_fill_arrays(resource->video->picture->data, resource->video->picture->linesize, resource->video->buffer, AV_PIX_FMT_YUV420P, resource->video->codec_context->width, resource->video->codec_context->height, 32);
     resource->video->rect.w = resource->video->codec_context->width;
     resource->video->rect.h = resource->video->codec_context->height;
     resource->video->fps = av_q2d(resource->video->format_context->streams[resource->video->video_stream]->r_frame_rate);
@@ -114,9 +112,6 @@ static inline void cdlv_resource_image_unload(cdlv_resource* resource) {
 } 
 
 static inline void cdlv_resource_video_unload(cdlv_resource* resource) {
-    av_frame_free(&resource->video->picture);
-    av_free(resource->video->buffer);
-    sws_freeContext(resource->video->sws_context);
     av_packet_free(&resource->video->packet);
     av_frame_free(&resource->video->frame);
     avcodec_free_context(&resource->video->codec_context);

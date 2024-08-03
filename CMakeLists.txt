@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD 11)
     
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
 #    add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
-    add_compile_options(-g -Wall -Werror -fsanitize=undefined -O1 -fsanitize=address -fno-omit-frame-pointer)
+    add_compile_options(-g -Wall -Werror -fsanitize=undefined)
 else()
     add_compile_options(-O2)
 endif()
@@ -47,7 +47,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
         avutil
         swscale
         ${PROJECT_NAME}
-        -fsanitize=address
+        #-fsanitize=address
         -fsanitize=undefined
     )
 else()

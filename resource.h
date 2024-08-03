@@ -4,8 +4,6 @@
 #include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
 #include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-#include <pthread.h>
 
 #include "cdlv.h"
 
@@ -17,16 +15,16 @@ typedef enum {
 typedef struct cdlv_video {
     AVFormatContext* format_context;
     AVCodecContext* codec_context;
-    struct SwsContext* sws_context;
     AVCodec* codec;
     AVFrame* frame;
     AVPacket* packet;
-    AVFrame* picture;
-    uint8_t* buffer;
     int video_stream;
     SDL_Rect rect;
     SDL_Texture* texture;
     double fps;
+    bool is_playing;
+    bool loop;
+    bool eof;
 } cdlv_video;
 
 typedef struct cdlv_resource {
@@ -37,8 +35,6 @@ typedef struct cdlv_resource {
         SDL_Texture* image;
         cdlv_video* video;
     };
-    bool is_playing;
-    bool loop;
 } cdlv_resource;
 
 cdlv_error cdlv_resource_new(cdlv* base, const cdlv_resource_type type, char* path, cdlv_resource** resource);
