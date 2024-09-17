@@ -8,11 +8,13 @@ Easy to implement into existing SDL2-based application.
 - **Compiles to static library**
 - **Supports various image and video formats with SDL2_image and ffmpeg**
 
-## Things to come
+## In progress
 - scene/script behaviorism tests
+- mdlv reimplementation
+
+## Things to come
 - choices and goto reimplementation
 - cdlv-menu reimplementation app
-- built-in mdlv reimplementation
 
 ## Example
 ```
