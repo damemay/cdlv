@@ -22,7 +22,9 @@ add_library(${PROJECT_NAME} STATIC
     scene.c
     file.c
     text.c
+    mdlv.c
     hashdict.c/hashdict.c
+    mongoose/mongoose.c
     array.c
 )
 
