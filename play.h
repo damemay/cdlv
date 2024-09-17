@@ -6,6 +6,7 @@
 #include "scene.h"
 #include "parse.h"
 #include "text.h"
+#include "resource.h"
 
 typedef struct {
     uint16_t index;
@@ -118,13 +119,13 @@ static inline cdlv_error cdlv_play_video(cdlv* base, cdlv_video* video, SDL_Rend
                         cdlv_log("Could not decode frame");
                         cdlv_err(cdlv_video_error);
                     }
-                    printf("Frame %d/%ld pts %ld dts %ld\n", video->codec_context->frame_number, video->format_context->streams[video->video_stream]->nb_frames, video->frame->pts, video->frame->pkt_dts);
+                    printf("Frame %d/%ld pts %ld dts %ld\n", video->codec_context->frame_num, video->format_context->streams[video->video_stream]->nb_frames, video->frame->pts, video->frame->pkt_dts);
                     if (video->frame->linesize[0] > 0 && video->frame->linesize[1] > 0 && video->frame->linesize[2] > 0) {
                         ret = SDL_UpdateYUVTexture(video->texture, NULL, video->frame->data[0], video->frame->linesize[0], video->frame->data[1], video->frame->linesize[1], video->frame->data[2], video->frame->linesize[2]);
                     } else if (video->frame->linesize[0] < 0 && video->frame->linesize[1] < 0 && video->frame->linesize[2] < 0) {
                         ret = SDL_UpdateYUVTexture(video->texture, NULL, video->frame->data[0] + video->frame->linesize[0] * (video->frame->height- 1), -video->frame->linesize[0], video->frame->data[1] + video->frame->linesize[1] * (AV_CEIL_RSHIFT(video->frame->height, 1) - 1), -video->frame->linesize[1], video->frame->data[2] + video->frame->linesize[2] * (AV_CEIL_RSHIFT(video->frame->height, 1) - 1), -video->frame->linesize[2]);
                     }
-                    if(video->frame->pts+video->frame->pkt_duration == video->format_context->streams[video->video_stream]->duration && video->eof) {
+                    if(video->frame->pts+video->frame->duration == video->format_context->streams[video->video_stream]->duration && video->eof) {
                         video->is_playing = false;
                         if(base->call_stop) cdlv_stop(base);
                         cdlv_err(cdlv_ok);
@@ -158,9 +159,17 @@ static inline cdlv_error cdlv_parse_scene_line(cdlv* base, cdlv_scene* scene, SD
     }
     cdlv_error res;
     if(base->current_line == scene->script->size) {
+	puts("At the end of script");
         if(base->current_scene_index+1 < base->scene_count) {
+	    puts("Changing scene");
             if((res = cdlv_set_scene(base, base->current_scene_index+1, renderer)) != cdlv_ok) cdlv_err(res);
+	    cdlv_scene* new_scene = (cdlv_scene*)base->current_scene;
+	    if(new_scene->loaded) {
+		base->current_line = 0;
+		if((res = cdlv_parse_scene_line(base, new_scene, renderer)) != cdlv_ok) cdlv_err(res);
+	    }
         } else {
+	    puts("Calling stop");
             if(((cdlv_resource*)base->current_bg)->video->is_playing) base->call_stop = true;
             else cdlv_stop(base);
         }

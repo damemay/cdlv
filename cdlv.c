@@ -112,6 +112,7 @@ cdlv_error cdlv_loop(cdlv* base, SDL_Renderer* renderer) {
 }
 
 cdlv_error cdlv_stop(cdlv* base) {
+    puts("Called stop!");
     base->is_playing = false;
     dic_forEach(base->resources, unload_global_resources, NULL);
     cdlv_text_free((cdlv_text*)base->text);

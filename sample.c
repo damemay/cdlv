@@ -40,6 +40,17 @@ int foreach_scene(void *key, int count, void **value, void *user) {
 }
 
 int main(int argc, char* argv[]) {
+    char script_path[cdlv_max_string_size];
+    if(argc < 2) {
+	strcpy(script_path, "../res/sample/sample.cdlv");
+    } else {
+	if(strstr(argv[1], ".cdlv")) strncpy(script_path, argv[1], cdlv_max_string_size-1);
+	else {
+	    fprintf(stderr, "Usage: %s [script]\r\n [script]\tpath to .cdlv file. defaults to ../res/sample/sample.cdlv\r\n", argv[0]);
+	    exit(1);
+	}
+    }
+
     // Initialize your SDL2, SDL2_image, SDL2_ttf:
     SDL_Init(SDL_INIT_VIDEO);
     IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
@@ -57,7 +68,7 @@ int main(int argc, char* argv[]) {
     cdlv_set_config(&base, config);
 
     // Add script - it will load in all text data and create structures.
-    cdlv_add_script(&base, "../res/sample/sample.cdlv");
+    cdlv_add_script(&base, script_path);
     error(&base);
 
     // cdlv_play loads global resources and first scene's resources.

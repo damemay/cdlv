@@ -11,36 +11,55 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
 #    add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
     add_compile_options(-g -Wall -Werror -fsanitize=undefined)
 else()
-    add_compile_options(-O2)
+    add_compile_options(-g)
 endif()
-    
-add_library(${PROJECT_NAME} STATIC
-    cdlv.c
-    util.c
-    parse.c
-    resource.c
-    scene.c
-    file.c
-    text.c
-    mdlv.c
-    hashdict.c/hashdict.c
-    mongoose/mongoose.c
-    array.c
-)
 
-set(EXEC_NAME cdlv-sample)
+option(CDLV_SAMPLE "Build sample" ON)
+option(CDLV_MONGOOSE "Include mongoose for MDLV" ON)
+option(CDLV_MDLV_SERVER "Build MDLV server" ON)
+option(CDLV_MENU "Build menu app" ON)
+    
+if(CDLV_MONGOOSE AND CDLV_MDLV_SERVER)
+    add_library(${PROJECT_NAME} STATIC
+        cdlv.c
+        util.c
+        parse.c
+        resource.c
+        scene.c
+        file.c
+        text.c
+        mdlv.c
+        hashdict.c/hashdict.c
+        mongoose/mongoose.c
+        array.c
+    )
+else()
+    add_library(${PROJECT_NAME} STATIC
+        cdlv.c
+        util.c
+        parse.c
+        resource.c
+        scene.c
+        file.c
+        text.c
+        hashdict.c/hashdict.c
+        array.c
+    )
+endif()
 
-add_executable(${EXEC_NAME}
-    main.c
-)
+if(CDLV_SAMPLE)
+    set(EXEC_NAME cdlv-sample)
     
-include_directories(${EXEC_NAME}
-    ${SDL2_INCLUDE_DIRS}
-    ${SDL2IMAGE_INCLUDE_DIRS}
-    ${SDL2TTF_INCLUDE_DIRS}
-)
-    
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
+    add_executable(${EXEC_NAME}
+        sample.c
+    )
+        
+    include_directories(${EXEC_NAME}
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2IMAGE_INCLUDE_DIRS}
+        ${SDL2TTF_INCLUDE_DIRS}
+    )
+        
     target_link_libraries(${EXEC_NAME}
         SDL2::SDL2
         SDL2_image
@@ -50,18 +69,17 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
         avutil
         swscale
         ${PROJECT_NAME}
-        #-fsanitize=address
-        -fsanitize=undefined
     )
-else()
-    target_link_libraries(${EXEC_NAME}
-        SDL2::SDL2
-        SDL2_image
-        SDL2_ttf
-        avcodec
-        avformat
-        avutil
-        swscale
+endif()
+
+if(CDLV_SAMPLE)
+    set(MDLV_EXEC_NAME mdlv-server)
+    
+    add_executable(${MDLV_EXEC_NAME}
+        server.c
+    )
+        
+    target_link_libraries(${MDLV_EXEC_NAME}
         ${PROJECT_NAME}
     )
 endif()
