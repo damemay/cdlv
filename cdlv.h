@@ -14,6 +14,7 @@ typedef enum {
     cdlv_parse_error,
     cdlv_fatal_error,
 } cdlv_error;
+typedef void (*cdlv_log_callback)(char* buf);
 
 typedef struct cdlv_config {
     char text_font[cdlv_max_string_size];
@@ -24,6 +25,9 @@ typedef struct cdlv_config {
     int text_render_bg;
     uint8_t text_speed;
     uint8_t dissolve_speed;
+    cdlv_log_callback log_callback;
+    char* log_buffer;
+    size_t log_buffer_size;
 } cdlv_config;
 
 typedef struct cdlv {
@@ -32,7 +36,6 @@ typedef struct cdlv {
     bool can_interact;
 
     cdlv_error error;
-    char log[cdlv_max_string_size];
 
     uint16_t width, height;
 

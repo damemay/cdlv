@@ -11,18 +11,21 @@
 #define _height 544
 #define _title "cdlv2 sample"
 
+void log_cb(char* buf) {
+    printf("cdlv: %s\n", buf);
+}
+
 void error(cdlv* base) {
     if(base->error == cdlv_ok) return;
     switch(base->error) {
         case cdlv_ok: printf("CDLV OK\n"); break;
-        case cdlv_memory_error: printf("CDLV Memory error: "); break;
-        case cdlv_file_error: printf("CDLV File error: "); break;
-        case cdlv_read_error: printf("CDLV Read error: "); break;
-        case cdlv_parse_error: printf("CDLV Parse error: "); break;
-        case cdlv_video_error: printf("CDLV Video error: "); break;
-        case cdlv_fatal_error: printf("CDLV Fatal error: "); break;
+        case cdlv_memory_error: puts("CDLV Memory error: "); break;
+        case cdlv_file_error:   puts("CDLV File error: "); break;
+        case cdlv_read_error:   puts("CDLV Read error: "); break;
+        case cdlv_parse_error:  puts("CDLV Parse error: "); break;
+        case cdlv_video_error:  puts("CDLV Video error: "); break;
+        case cdlv_fatal_error:  puts("CDLV Fatal error: "); break;
     }
-    printf("%s\n", base->log);
     exit(1);
 }
 
@@ -64,7 +67,13 @@ int main(int argc, char* argv[]) {
     cdlv_init(&base, _width, _height);
 
     // Setup your config. It can be empty for defaults.
-    cdlv_config config = {0};
+    //cdlv_config config = {0};
+    char buffer[cdlv_max_string_size];
+    cdlv_config config = {
+        .log_callback = log_cb,
+        .log_buffer = buffer,
+        .log_buffer_size = cdlv_max_string_size,
+    };
     cdlv_set_config(&base, config);
 
     // Add script - it will load in all text data and create structures.

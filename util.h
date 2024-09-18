@@ -3,8 +3,8 @@
 
 #include "cdlv.h"
 
-#define cdlv_logv(msg, ...) sprintf(base->log, msg, __VA_ARGS__)
-#define cdlv_log(msg) sprintf(base->log, "%.*s", strlen(msg) > cdlv_max_string_size ? (int)cdlv_max_string_size : (int)strlen(msg), msg)
+#define cdlv_logv(msg, ...) ({if(base->config.log_buffer && base->config.log_callback) snprintf(base->config.log_buffer, base->config.log_buffer_size, msg, __VA_ARGS__), base->config.log_callback(base->config.log_buffer);})
+#define cdlv_log(msg) ({if(base->config.log_buffer && base->config.log_callback) snprintf(base->config.log_buffer, base->config.log_buffer_size, msg), base->config.log_callback(base->config.log_buffer);})
 #define cdlv_err(err) ({base->error = err; return err;})
 
 #define cdlv_strdup(dest, src, size)            \
