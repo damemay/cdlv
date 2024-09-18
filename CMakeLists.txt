@@ -31,6 +31,7 @@ if(CDLV_MONGOOSE AND CDLV_MDLV_SERVER)
         mdlv.c
         hashdict.c/hashdict.c
         mongoose/mongoose.c
+	cJSON/cJSON.c
         array.c
     )
 else()

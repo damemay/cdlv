@@ -1,25 +1,49 @@
 #include "mdlv.h"
 #include "mongoose/mongoose.h"
+#include "cJSON/cJSON.h"
 #include "resource.h"
 #include "scene.h"
 
 static int foreach_res(void *key, int count, void **value, void *user) {
     cdlv_resource* res = (cdlv_resource*)*value;
-    char* buf = (char*)user;
-    char inbuf[cdlv_max_string_size];
-    snprintf(inbuf, cdlv_max_string_size-1, "\"%.*s\":\"%s\",", count, (char*)key, res->path);
-    strcat(buf, inbuf);
+    cJSON* resources = (cJSON*)user;
+    cJSON* resource = cJSON_CreateObject();
+    if(!resource) fprintf(stderr, "mdlv: cjson error\n");
+    char key_buf[cdlv_max_string_size];
+    snprintf(key_buf, cdlv_max_string_size-1, "%.*s", count, (char*)key);
+    if(!cJSON_AddStringToObject(resource, key_buf, res->path))
+	fprintf(stderr, "mdlv: cjson error\n");
+    if(!cJSON_AddItemToArray(resources, resource))
+	fprintf(stderr, "mdlv: cjson error\n");
     return 1;
 }
 
 static int foreach_scene(void *key, int count, void **value, void *user) {
     cdlv_scene* scene = (cdlv_scene*)*value;
-    char* buf = (char*)user;
-    char inbuf[cdlv_max_string_size];
-    snprintf(inbuf, cdlv_max_string_size-1, "\"%.*s\": [", count, (char*)key);
-    strcat(buf, inbuf);
-    dic_forEach(scene->resources, foreach_res, buf);
-    strcat(buf, "],");
+    cJSON* scenes = (cJSON*)user;
+    cJSON* scene_json = cJSON_CreateObject();
+    if(!scene_json)
+	fprintf(stderr, "mdlv: cjson error\n");
+    char key_buf[cdlv_max_string_size];
+    snprintf(key_buf, cdlv_max_string_size-1, "%.*s", count, (char*)key);
+    if(!cJSON_AddStringToObject(scene_json, "name", key_buf))
+	fprintf(stderr, "mdlv: cjson error\n");
+    cJSON* resources = cJSON_AddArrayToObject(scene_json, "resources");
+    if(!resources)
+	fprintf(stderr, "mdlv: cjson error\n");
+    dic_forEach(scene->resources, foreach_res, resources);
+    if(!cJSON_AddStringToObject(scene_json, "resources_path", scene->resources_path))
+	fprintf(stderr, "mdlv: cjson error\n");
+    cJSON* script = cJSON_AddArrayToObject(scene_json, "script");
+    for(size_t i=0; i<scene->script->size; i++) {
+	char* line = SCL_ARRAY_GET(scene->script, i, char*);
+	cJSON* line_json = cJSON_CreateString(line);
+	if(!line_json) fprintf(stderr, "mdlv: cjson error\n");
+	if(!cJSON_AddItemToArray(script, line_json))
+	    fprintf(stderr, "mdlv: cjson error\n");
+    }
+    if(!cJSON_AddItemToArray(scenes, scene_json))
+	fprintf(stderr, "mdlv: cjson error\n");
     return 1;
 }
 
@@ -27,7 +51,6 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
     mdlv* base = (mdlv*) c->fn_data;
     if(ev == MG_EV_HTTP_MSG) {
 	struct mg_http_message* hm = (struct mg_http_message*)ev_data;
-	// /list - no json - lists scripts from mdlv->path
 	if(mg_match(hm->uri, mg_str("/list"), NULL)) {
 	    char files[cdlv_max_string_size];
 	    strcpy(files, "[");
@@ -41,21 +64,20 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
 	    }
 	    strcat(files, "]");
 	    mg_http_reply(c, 200, "Content-Type: application/json\r\n",
-		    "{%m: %.*s}", MG_ESC("list"), strlen(files), files);
-	// /script - json : {"filename":"*.cdlv", "line":1} - get line from script or get script info when line is not in json
+		    "{%m: %m, %m: %.*s}", MG_ESC("type"), MG_ESC("list"), MG_ESC("files"), strlen(files), files);
 	} else if(mg_match(hm->uri, mg_str("/script"), NULL)) {
 	    struct mg_str json = hm->body;
 	    char* filename = mg_json_get_str(json, "$.filename");
 	    if(!filename) {
 		mg_http_reply(c, 400, "Content-Type: application/json\r\n",
-			"{%m: %m}", MG_ESC("error"), MG_ESC("No filename found"));
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("No filename found"));
 		return;
 	    }
 	    struct mg_str format = mg_str("*.cdlv");
 	    if(!mg_match(mg_str(filename), format, NULL)) {
 		char* error = mg_mprintf("%.*s is not .cdlv file", strlen(filename), filename);
 		mg_http_reply(c, 400, "Content-Type: application/json\r\n",
-			"{%m: %m}", MG_ESC("error"), MG_ESC(error));
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC(error));
 		free(filename);
 		free(error);
 		return;
@@ -67,58 +89,59 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
 		    found = true;
 		    break;
 		}
+		current = current->next;
 	    }
 	    if(!found) {
 		free(filename);
 		char* error = mg_mprintf("%.*s is not listed in loaded scripts", strlen(filename), filename);
 	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
-			"{%m: %m}", MG_ESC("error"), MG_ESC(error));
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC(error));
 		free(error);
 	        return;
 	    }
 
-	    char* file_path = mg_mprintf("%s%.*s", base->path, strlen(current->name), current->name);
-	    struct mg_str script = mg_file_read(&mg_fs_posix, file_path);
-	    if(!script.buf) {
-		char* error = mg_mprintf("Could not read %.*s", strlen(file_path), file_path);
+	    cJSON* script_info = cJSON_CreateObject();
+	    if(!script_info) {
 	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
-			"{%m: %m}", MG_ESC("error"), MG_ESC(error));
-		free(error);
-		free(file_path);
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("cjson error"));
 	        return;
 	    }
-	    free(file_path);
-	    long line = mg_json_get_long(json, "$.line", -1);
-	    if(line == -1) {
-		char res[cdlv_max_string_size];
-		char sce[cdlv_max_string_size];
-		dic_forEach(current->instance->resources, foreach_res, res);
-		dic_forEach(current->instance->scenes, foreach_scene, sce);
-		char* msg = mg_mprintf("\"global_resources\": [%.*s], %.*s",
-			strlen(res), res, strlen(sce), sce);
-		mg_http_reply(c, 200, "Content-Type: application/json\r\n",
-			"{%m: {%.*s}}", MG_ESC("script"), strlen(msg), msg);
-		free(msg);
-		return;
+	    if(!cJSON_AddStringToObject(script_info, "type", "script")) {
+	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("cjson error"));
+	        return;
 	    }
-
-	    char* line_str = strtok(script.buf, "\r\n");
-	    size_t i = 0;
-	    while(line_str) {
-		if(i==line) break;
-		i++;
-		line_str = strtok(NULL, "\r\n");
+	    cJSON* global_resources = cJSON_AddArrayToObject(script_info, "global_resources");
+	    if(!global_resources) {
+	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("cjson error"));
+	        return;
+	    }
+	    dic_forEach(current->instance->resources, foreach_res, global_resources);
+	    cJSON* scenes = cJSON_AddArrayToObject(script_info, "scenes");
+	    if(!scenes) {
+	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("cjson error"));
+	        return;
+	    }
+	    dic_forEach(current->instance->scenes, foreach_scene, scenes);
+	    char* string = cJSON_PrintUnformatted(script_info);
+	    if(!string) {
+	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("cjson error"));
+	        return;
 	    }
 	    mg_http_reply(c, 200, "Content-Type: application/json\r\n",
-		    "{%m: %m}", MG_ESC("line"), MG_ESC(line_str+strspn(line_str, " \t")));
-	    free(script.buf);
-	// /anim - json : {"filename":"*"} - get animation file
+	    	"%.*s", strlen(string), string);
+	    cJSON_Delete(script_info);
+	    free(string);
+	    return;
 	} else if(mg_match(hm->uri, mg_str("/anim"), NULL)) {
 	    struct mg_str json = hm->body;
 	    char* filename = mg_json_get_str(json, "$.filename");
 	    if(!filename) {
 		mg_http_reply(c, 400, "Content-Type: application/json\r\n",
-			"{%m: %m}", MG_ESC("error"), MG_ESC("No filename found"));
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("No filename found"));
 		return;
 	    }
 	    char* file_path = mg_mprintf("%s%.*s", base->path, strlen(filename), filename);
@@ -126,7 +149,7 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
 	    if(!img.buf) {
 		char* error = mg_mprintf("Could not read %.*s", strlen(file_path), file_path);
 	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
-			"{%m: %m}", MG_ESC("error"), MG_ESC(error));
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC(error));
 		free(error);
 		free(file_path);
 	        return;
@@ -143,13 +166,12 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
 	    mg_send(c, img.buf, img.len);
 	    mg_send(c, "\r\n", 2);
 	    free(img.buf);
-	// /bg - json : {"filename":"*"} - get image file
 	} else if(mg_match(hm->uri, mg_str("/bg"), NULL)) {
 	    struct mg_str json = hm->body;
 	    char* filename = mg_json_get_str(json, "$.filename");
 	    if(!filename) {
 		mg_http_reply(c, 400, "Content-Type: application/json\r\n",
-			"{%m: %m}", MG_ESC("error"), MG_ESC("No filename found"));
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("No filename found"));
 		return;
 	    }
 	    char* file_path = mg_mprintf("%s%.*s", base->path, strlen(filename), filename);
@@ -157,7 +179,7 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
 	    if(!img.buf) {
 		char* error = mg_mprintf("Could not read %.*s", strlen(file_path), file_path);
 	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
-			"{%m: %m}", MG_ESC("error"), MG_ESC(error));
+			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC(error));
 		free(error);
 		free(file_path);
 	        return;
