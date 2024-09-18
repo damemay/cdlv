@@ -11,6 +11,7 @@ Easy to implement into existing SDL2-based application.
 ## In progress
 - scene/script behaviorism tests
 - mdlv reimplementation
+- fix ffmpeg green frame
 
 ## Things to come
 - choices and goto reimplementation

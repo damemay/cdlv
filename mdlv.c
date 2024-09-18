@@ -1,6 +1,12 @@
 #include "mdlv.h"
 #include "mongoose/mongoose.h"
 
+// endpoints:
+// /list - no json - lists scripts from mdlv->path
+// /script - json : {"filename":"*.cdlv", "line":1} - get line from script or get script info when line is not in json
+// /anim - json : {"filename":"*"} - get animation file
+// /bg - json : {"filename":"*"} - get image file
+
 static void fn(struct mg_connection* c, int ev, void* ev_data) {
     mdlv* base = (mdlv*) c->fn_data;
     if(ev == MG_EV_HTTP_MSG) {
