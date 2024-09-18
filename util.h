@@ -5,7 +5,7 @@
 
 #define cdlv_logv(msg, ...) ({if(base->config.log_buffer && base->config.log_callback) snprintf(base->config.log_buffer, base->config.log_buffer_size, msg, __VA_ARGS__), base->config.log_callback(base->config.log_buffer);})
 #define cdlv_log(msg) ({if(base->config.log_buffer && base->config.log_callback) snprintf(base->config.log_buffer, base->config.log_buffer_size, msg), base->config.log_callback(base->config.log_buffer);})
-#define cdlv_err(err) ({base->error = err; return err;})
+#define cdlv_err(err) ({base->error = err; if(base->config.error_callback) base->config.error_callback(err, base->config.error_user_data); return err;})
 
 #define cdlv_strdup(dest, src, size)            \
 {                                               \

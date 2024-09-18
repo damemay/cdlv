@@ -15,16 +15,16 @@ void log_cb(char* buf) {
     printf("cdlv: %s\n", buf);
 }
 
-void error(cdlv* base) {
-    if(base->error == cdlv_ok) return;
-    switch(base->error) {
+void error(cdlv_error error, void* user_data) {
+    if(error == cdlv_ok) return;
+    switch(error) {
         case cdlv_ok: printf("CDLV OK\n"); break;
-        case cdlv_memory_error: puts("CDLV Memory error: "); break;
-        case cdlv_file_error:   puts("CDLV File error: "); break;
-        case cdlv_read_error:   puts("CDLV Read error: "); break;
-        case cdlv_parse_error:  puts("CDLV Parse error: "); break;
-        case cdlv_video_error:  puts("CDLV Video error: "); break;
-        case cdlv_fatal_error:  puts("CDLV Fatal error: "); break;
+        case cdlv_memory_error: puts("CDLV Memory error"); break;
+        case cdlv_file_error:   puts("CDLV File error"); break;
+        case cdlv_read_error:   puts("CDLV Read error"); break;
+        case cdlv_parse_error:  puts("CDLV Parse error"); break;
+        case cdlv_video_error:  puts("CDLV Video error"); break;
+        case cdlv_fatal_error:  puts("CDLV Fatal error"); break;
     }
     exit(1);
 }
@@ -71,6 +71,7 @@ int main(int argc, char* argv[]) {
     char buffer[cdlv_max_string_size];
     cdlv_config config = {
         .log_callback = log_cb,
+	.error_callback = error,
         .log_buffer = buffer,
         .log_buffer_size = cdlv_max_string_size,
     };
@@ -78,12 +79,10 @@ int main(int argc, char* argv[]) {
 
     // Add script - it will load in all text data and create structures.
     cdlv_add_script(&base, script_path);
-    error(&base);
 
     // cdlv_play loads global resources and first scene's resources.
     // Sets cdlv.is_playing to true.
     cdlv_play(&base, _renderer);
-    error(&base);
 
     printf("global resources:\n");
     dic_forEach(base.resources, foreach_res, NULL);
@@ -100,14 +99,12 @@ int main(int argc, char* argv[]) {
             // Add cdlv_event into your event polling loop for keyhandling:
             if(base.is_playing) {
                 cdlv_event(&base, _renderer, event);
-                error(&base);
             }
         }
         SDL_RenderClear(_renderer);
         // Add cdlv_loop between your SDL_RenderClear and SDL_RenderPresent:
         if(base.is_playing) {
             cdlv_loop(&base, _renderer);
-            error(&base);
         }
         SDL_RenderPresent(_renderer);
     }
