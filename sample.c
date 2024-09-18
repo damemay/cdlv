@@ -66,8 +66,9 @@ int main(int argc, char* argv[]) {
     cdlv base = {0};
     cdlv_init(&base, _width, _height);
 
-    // Setup your config. It can be empty for defaults.
-    //cdlv_config config = {0};
+    // Setup your config. cdlv_set_config does not have to be called for defaults
+    // and no log/error handling.
+    // cdlv_config config = {0};
     char buffer[cdlv_max_string_size];
     cdlv_config config = {
         .log_callback = log_cb,

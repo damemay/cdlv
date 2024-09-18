@@ -13,13 +13,30 @@ void cdlv_init(cdlv* base, uint16_t width, uint16_t height) {
     base->scene_count = 0;
     base->width = width;
     base->height = height;
-    base->current_tick = SDL_GetTicks64();
-    base->last_tick = SDL_GetTicks64();
+    base->current_tick = 0;
+    base->last_tick = 0;
     base->elapsed_ticks = 0.0f;
     base->accum = 0.0f;
     base->resources = dic_new(0);
     base->scenes = dic_new(0);
     base->can_interact = true;
+    strcpy(base->config.text_font, "../res/fonts/roboto.ttf");
+    base->config.text_size = 32;
+    base->config.text_wrap = 900;
+    base->config.text_xy.x = 50;
+    base->config.text_xy.y = 400;
+    base->config.text_color.r = 0;
+    base->config.text_color.g = 0;
+    base->config.text_color.b = 0;
+    base->config.text_color.a = 255;
+    base->config.text_render_bg = 0;
+    base->config.dissolve_speed = 0;
+    base->config.text_speed = 0;
+    base->config.log_callback = NULL;
+    base->config.error_callback = NULL;
+    base->config.error_user_data = NULL;
+    base->config.log_buffer = NULL;
+    base->config.log_buffer_size = 0;
 }
 
 void cdlv_set_config(cdlv* base, const cdlv_config config) {

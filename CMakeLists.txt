@@ -72,14 +72,27 @@ if(CDLV_SAMPLE)
     )
 endif()
 
-if(CDLV_SAMPLE)
+if(CDLV_MDLV_SERVER)
     set(MDLV_EXEC_NAME mdlv-server)
     
     add_executable(${MDLV_EXEC_NAME}
         server.c
     )
         
+    include_directories(${MDLV_EXEC_NAME}
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2IMAGE_INCLUDE_DIRS}
+        ${SDL2TTF_INCLUDE_DIRS}
+    )
+        
     target_link_libraries(${MDLV_EXEC_NAME}
+        SDL2::SDL2
+        SDL2_image
+        SDL2_ttf
+        avcodec
+        avformat
+        avutil
+        swscale
         ${PROJECT_NAME}
     )
 endif()

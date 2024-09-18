@@ -10,14 +10,11 @@ int main(int argc, char** argv) {
 	strncpy(host, argv[1], cdlv_max_string_size-1);
 	strncpy(path, argv[2], cdlv_max_string_size-1);
     }
-
     mdlv mdlv_base = {
 	.host = host,
 	.path = path,
     };
-    mdlv_init(&mdlv_base);
-
+    if(mdlv_init(&mdlv_base) != cdlv_ok) exit(1);
     for(;;) mg_mgr_poll(&mdlv_base.manager, 50);
-
     mdlv_free(&mdlv_base);
 }
