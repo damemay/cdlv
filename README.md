@@ -1,20 +1,20 @@
 # cdlv
 Library and scripting system for ADV/VN style games made in pure C.
 
-Easy to implement into existing SDL2 renderer-based application or anywhere thanks to Mongoose.
+Easy to implement into existing SDL2 renderer-based application or anywhere with HTTP capabilities thanks to Mongoose.
 
 ## Features
 - **Simple C-inspired scripting language**
-- **Play anywhere thanks to HTTP REST API server abilities and sample client implementation**
-- **Supports various image and video formats with SDL2_image and ffmpeg**
+- **Play anywhere thanks to HTTP REST API server abilities**
+- **Supports various image and video formats**
+
+## Things to come
+- choices and goto
+- cdlv-menu app
 
 ## In progress
 - scene/script behaviorism tests
-- fix ffmpeg green frame
-
-## Things to come
-- choices and goto reimplementation
-- cdlv-menu reimplementation app
+- fix ffmpeg decoding 
 
 ## Scripting example
 ```
@@ -37,11 +37,11 @@ Easy to implement into existing SDL2 renderer-based application or anywhere than
 ```
 Refer to [sample.c](sample.c) and [res/sample/sample.cdlv](res/sample/sample.cdlv) for a documented sample desktop app.
 
-## MDLV
+# MDLV
 
-CDLV parser HTTP server implemented with Mongoose.
+CDLV parsing REST API HTTP server implemented with Mongoose.
 
-Starting a server from code is as simple as below:
+Using the server from code is as simple as this:
 ```c
 mdlv mdlv_base = {
     .host = "http://localhost:8080",
@@ -54,7 +54,7 @@ mdlv_free(&mdlv_base);
 ```
 Refer to [server.c](server.c) and [web_root/script.js](web_root/script.js) for working server and browser client implementation.
 
-## Building
+# Building
 Building requires SDL2, SDL2_image and SDL2_ttf and ffmpeg libraries installed on system.
 
 ```
@@ -64,7 +64,7 @@ mkdir build && cd build
 cmake .. && make
 ```
 
-### CMake options:
+## CMake options:
 - `CDLV_SAMPLE=ON` - Build `cdlv-sample`
 - `CDLV_MONGOOSE=ON` - Include mongoose and mdlv in library for MDLV support
 - `CDLV_MDLV_SERVER=ON` - Build `mdlv-server`
