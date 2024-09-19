@@ -1,7 +1,7 @@
 # cdlv
 Library and scripting system for ADV/VN style games made in pure C.
 
-Easy to implement into your existing application/game or anywhere with HTTP capabilities thanks to Mongoose.
+Easy to implement into basically anywhere.
 
 ## Features
 - **Simple C-inspired scripting language**
