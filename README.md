@@ -5,7 +5,7 @@ Easy to implement into existing SDL2 renderer-based application or anywhere with
 
 ## Features
 - **Simple C-inspired scripting language**
-- **Play anywhere thanks to HTTP REST API server abilities**
+- **Play anywhere thanks to HTTP REST API server capabilities**
 - **Supports various image and video formats**
 
 ## Things to come
