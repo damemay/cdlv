@@ -14,6 +14,7 @@ typedef struct mdlv_script {
 typedef struct mdlv {
     char* host;
     char* path;
+    char* web_root;
     mdlv_script_t* scripts;
     struct mg_mgr manager;
 } mdlv;

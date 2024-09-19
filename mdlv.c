@@ -144,18 +144,15 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
 			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("No filename found"));
 		return;
 	    }
-	    char* file_path = mg_mprintf("%s%.*s", base->path, strlen(filename), filename);
-	    struct mg_str img = mg_file_read(&mg_fs_posix, file_path);
+	    struct mg_str img = mg_file_read(&mg_fs_posix, filename);
 	    if(!img.buf) {
-		char* error = mg_mprintf("Could not read %.*s", strlen(file_path), file_path);
+		char* error = mg_mprintf("Could not read %.*s", strlen(filename), filename);
 	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
 			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC(error));
 		free(error);
-		free(file_path);
 	        return;
 	    }
 	    free(filename);
-	    free(file_path);
 	    mg_printf(c,
 	            "HTTP/1.0 200 OK\r\n"
 	            "Cache-Control: no-cache\r\n"
@@ -174,18 +171,15 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
 			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC("No filename found"));
 		return;
 	    }
-	    char* file_path = mg_mprintf("%s%.*s", base->path, strlen(filename), filename);
-	    struct mg_str img = mg_file_read(&mg_fs_posix, file_path);
+	    struct mg_str img = mg_file_read(&mg_fs_posix, filename);
 	    if(!img.buf) {
-		char* error = mg_mprintf("Could not read %.*s", strlen(file_path), file_path);
+		char* error = mg_mprintf("Could not read %.*s", strlen(filename), filename);
 	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
 			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC(error));
 		free(error);
-		free(file_path);
 	        return;
 	    }
 	    free(filename);
-	    free(file_path);
 	    mg_printf(c,
 	            "HTTP/1.0 200 OK\r\n"
 	            "Cache-Control: no-cache\r\n"
@@ -197,8 +191,8 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
 	    mg_send(c, "\r\n", 2);
 	    free(img.buf);
 	} else {
-	    struct mg_http_serve_opts opts = {.root_dir = "mdlv_root"};
-	    mg_http_serve_dir(c, ev_data, &opts);
+	    struct mg_http_serve_opts opts = {.root_dir = base->web_root};
+	    mg_http_serve_dir(c, hm, &opts);
 	}
     }
 }
