@@ -37,7 +37,7 @@ Easy to implement into existing SDL2 renderer-based application or anywhere with
 ```
 Refer to [sample.c](sample.c) and [res/sample/sample.cdlv](res/sample/sample.cdlv) for a documented sample desktop app.
 
-# MDLV
+# mdlv
 
 CDLV parsing REST API HTTP server implemented with Mongoose.
 
@@ -66,6 +66,6 @@ cmake .. && make
 
 ## CMake options:
 - `CDLV_SAMPLE=ON` - Build `cdlv-sample`
-- `CDLV_MONGOOSE=ON` - Include mongoose and mdlv in library for MDLV support
+- `CDLV_MONGOOSE=ON` - Include mongoose and mdlv inside library
 - `CDLV_MDLV_SERVER=ON` - Build `mdlv-server`
 - `CDLV_MENU=ON` - Build `cdlv-menu`
