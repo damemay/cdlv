@@ -11,7 +11,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
 #    add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
     add_compile_options(-g -Wall -Werror -fsanitize=undefined)
 else()
-    add_compile_options(-g)
+    add_compile_options(-O2)
 endif()
 
 option(CDLV_SAMPLE "Build sample" ON)
