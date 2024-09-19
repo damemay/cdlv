@@ -1,12 +1,14 @@
 # cdlv
 Library and scripting system for ADV/VN style games made in pure C.
 
-Easy to implement into existing SDL2 renderer-based application or anywhere with HTTP capabilities thanks to Mongoose.
+Easy to implement into your existing application/game or anywhere with HTTP capabilities thanks to Mongoose.
 
 ## Features
 - **Simple C-inspired scripting language**
 - **Play anywhere thanks to HTTP REST API server capabilities**
-- **Supports various image and video formats**
+- **Rendering and windowing backend independent - use it with anything you like**
+- **Simple to setup with callbacks API**
+- **Supports decoding various video formats thanks to ffmpeg**
 
 ## Things to come
 - choices and goto
@@ -35,7 +37,7 @@ Easy to implement into existing SDL2 renderer-based application or anywhere with
     "Ah, there's the sun! I'm already feeling better!"
 }
 ```
-Refer to [sample.c](sample.c) and [res/sample/sample.cdlv](res/sample/sample.cdlv) for a documented sample desktop app.
+Refer to [sample.c](sample.c) and [res/sample/sample.cdlv](res/sample/sample.cdlv) for a documented sample desktop app with SDL2.
 
 # mdlv
 
@@ -55,7 +57,7 @@ mdlv_free(&mdlv_base);
 Refer to [server.c](server.c) and [web_root/script.js](web_root/script.js) for working server and browser client implementation.
 
 # Building
-Building requires SDL2, SDL2_image and SDL2_ttf and ffmpeg libraries installed on system.
+Building binaries requires `ffmpeg` (`SDL2`, `SDL2_image`, `SDL2_ttf` for `cdlv-sample`) libraries installed on system.
 
 ```
 git clone https://github.com/damemay/cdlv.git
