@@ -2,7 +2,6 @@
 #define MDLV_H
 
 #include "mongoose/mongoose.h"
-#include "common.h"
 #include "cdlv.h"
 
 typedef struct mdlv_script {

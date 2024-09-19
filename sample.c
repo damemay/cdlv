@@ -1,6 +1,8 @@
 #include "cdlv.h"
-#include "resource.h"
-#include "scene.h"
+
+#include <SDL2/SDL.h>
+#include <SDL_ttf.h>
+#include <SDL_image.h>
 
 #include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
@@ -9,37 +11,129 @@
 
 #define _width 960
 #define _height 544
-#define _title "cdlv2 sample"
+#define title "cdlv2 sample"
 
-void log_cb(char* buf) {
+struct config {
+    char text_font[cdlv_max_string_size];
+    uint8_t text_size;
+    cdlv_vec2 text_xy;
+    uint16_t text_wrap;
+    cdlv_color text_color;
+    int text_render_bg;
+    uint8_t text_speed;
+    uint8_t dissolve_speed;
+};
+
+struct text {
+    SDL_Texture* tex;
+    TTF_Font* font;
+    SDL_Rect* glyphs;
+    SDL_Color color;
+    SDL_Color bg;
+    char content[cdlv_max_string_size];
+    uint16_t content_size;
+    uint8_t font_size;
+    uint16_t x, y;
+    uint16_t w, h;
+    uint32_t wrap;
+    char rendered[cdlv_max_string_size];
+    uint16_t current_char;
+    float accum;
+};
+
+struct config config = {
+    .text_font = "../res/fonts/roboto.ttf",
+    .text_size = 32,
+    .text_xy = {.x = 50, .y = 400},
+    .text_wrap = 900,
+    .text_color = {.r = 0, .g = 0, .b = 0, .a = 255},
+};
+
+struct text* text;
+uint64_t current_tick, last_tick;
+float accum, elapsed_ticks;
+SDL_Event event;
+SDL_Window* window;
+SDL_Renderer* renderer;
+
+int create_text();
+void text_type();
+void text_retype();
+void text_update(const char* content);
+void text_draw_line(size_t x, size_t y, const char* line);
+void text_draw_wrap();
+void text_render();
+void text_free();
+
+static inline void log_cb(char* buf) {
     printf("cdlv: %s\n", buf);
 }
 
-void error(cdlv_error error, void* user_data) {
+static inline void error_cb(cdlv_error error, void* user_data) {
     if(error == cdlv_ok) return;
     switch(error) {
         case cdlv_ok: printf("CDLV OK\n"); break;
-        case cdlv_memory_error: puts("CDLV Memory error"); break;
-        case cdlv_file_error:   puts("CDLV File error"); break;
-        case cdlv_read_error:   puts("CDLV Read error"); break;
-        case cdlv_parse_error:  puts("CDLV Parse error"); break;
-        case cdlv_video_error:  puts("CDLV Video error"); break;
-        case cdlv_fatal_error:  puts("CDLV Fatal error"); break;
+        case cdlv_memory_error:	    puts("CDLV Memory error"); break;
+        case cdlv_file_error:       puts("CDLV File error"); break;
+        case cdlv_read_error:       puts("CDLV Read error"); break;
+        case cdlv_parse_error:      puts("CDLV Parse error"); break;
+        case cdlv_video_error:      puts("CDLV Video error"); break;
+        case cdlv_fatal_error:      puts("CDLV Fatal error"); break;
+        case cdlv_callback_error:   puts("Callback provided by user returned with error"); break;
     }
     exit(1);
 }
 
-int foreach_res(void *key, int count, void **value, void *user) {
-    cdlv_resource* res = (cdlv_resource*)*value;
-    printf("\t%.*s => %s [%s]\n", count, (char*)key, res->path, res->loaded ? "loaded" : "unloaded");
+static inline void* image_load_cb(const char* path, void* user_data) {
+    SDL_Renderer* renderer = (SDL_Renderer*)user_data;
+    SDL_Texture* texture = IMG_LoadTexture(renderer, path);
+    if(!texture) return NULL;
+    return texture;
+}
+
+static inline void image_render_cb(void* image, void* user_data) {
+    SDL_Renderer* renderer = (SDL_Renderer*)user_data;
+    SDL_Texture* texture = (SDL_Texture*)image;
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+}
+
+static inline void image_free_cb(void* image) {
+    SDL_Texture* texture = (SDL_Texture*)image;
+    SDL_DestroyTexture(texture);
+}
+
+static inline void video_free_cb(void* texture) {
+    SDL_Texture* _texture = (SDL_Texture*)texture;
+    SDL_DestroyTexture(_texture);
+}
+
+static inline void* video_load_cb(const uint64_t width, const uint64_t height, void* user_data) {
+    SDL_Renderer* renderer = (SDL_Renderer*)user_data;
+    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING, width, height);
+    if(!texture) return NULL;
+    return texture;
+}
+
+static inline void video_update_cb(cdlv_video* video, bool minus, void* user_data) {
+    if(minus) {
+	SDL_UpdateYUVTexture(video->texture, NULL, video->frame->data[0] + video->frame->linesize[0] * (video->frame->height- 1), -video->frame->linesize[0], video->frame->data[1] + video->frame->linesize[1] * (AV_CEIL_RSHIFT(video->frame->height, 1) - 1), -video->frame->linesize[1], video->frame->data[2] + video->frame->linesize[2] * (AV_CEIL_RSHIFT(video->frame->height, 1) - 1), -video->frame->linesize[2]);
+    } else {
+	SDL_UpdateYUVTexture(video->texture, NULL, video->frame->data[0], video->frame->linesize[0], video->frame->data[1], video->frame->linesize[1], video->frame->data[2], video->frame->linesize[2]);
+    }
+}
+
+static inline int user_update_cb(void* user_data) {
+    struct text* t = (struct text*)user_data;
+    if(t->current_char != t->content_size) {
+        strcpy(t->rendered, t->content);
+        t->current_char = t->content_size;
+	return 0;
+    }
     return 1;
 }
 
-int foreach_scene(void *key, int count, void **value, void *user) {
-    cdlv_scene* scene = (cdlv_scene*)*value;
-    printf("%d - %.*s\n", scene->index, count, (char*)key);
-    dic_forEach(scene->resources, foreach_res, NULL);
-    return 1;
+static inline void line_cb(const char* line, void* user_data) {
+    text_update(line);
 }
 
 int main(int argc, char* argv[]) {
@@ -53,72 +147,261 @@ int main(int argc, char* argv[]) {
 	    exit(1);
 	}
     }
-
-    // Initialize your SDL2, SDL2_image, SDL2_ttf:
     SDL_Init(SDL_INIT_VIDEO);
     IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG);
     TTF_Init();
-    SDL_Event event;
-    SDL_Window* _window = SDL_CreateWindow(_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, _width, _height, SDL_WINDOW_SHOWN);
-    SDL_Renderer* _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE);
+    window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, _width, _height, SDL_WINDOW_SHOWN);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE);
+    create_text();
 
-    // Initialize CDLV "base":
-    cdlv base = {0};
-    cdlv_init(&base, _width, _height);
-
-    // Setup your config. cdlv_set_config does not have to be called for defaults
-    // and no log/error handling.
-    // cdlv_config config = {0};
+    // Setup base cdlv instance with configured callbacks
     char buffer[cdlv_max_string_size];
-    cdlv_config config = {
-        .log_callback = log_cb,
-	.error_callback = error,
-        .log_buffer = buffer,
-        .log_buffer_size = cdlv_max_string_size,
+    cdlv base = {
+	.log_config = {
+	    .callback = log_cb,
+	    .buffer = buffer,
+	    .buffer_size = cdlv_max_string_size,
+	},
+	.error_config = {
+	    .callback = error_cb,
+	},
+	.image_config = {
+	    .load_callback = image_load_cb,
+	    .render_callback = image_render_cb,
+	    .free_callback = image_free_cb,
+	    .user_data = renderer,
+	},
+	.video_config = {
+	    .load_callback = video_load_cb,
+	    .free_callback = video_free_cb,
+	    .update_callback = video_update_cb,
+	    .user_data = renderer,
+	},
+	.user_config = {
+	    .update_callback = user_update_cb,
+	    .line_callback = line_cb,
+	    .user_data = text,
+	},
     };
-    cdlv_set_config(&base, config);
 
-    // Add script - it will load in all text data and create structures.
-    cdlv_add_script(&base, script_path);
+    // Set script file and load it
+    cdlv_set_script(&base, script_path);
 
-    // cdlv_play loads global resources and first scene's resources.
-    // Sets cdlv.is_playing to true.
-    cdlv_play(&base, _renderer);
+    // Set current scene to 0 and parse it's first line
+    cdlv_set_scene(&base, 0);
+    cdlv_parse_line(&base);
 
-    printf("global resources:\n");
-    dic_forEach(base.resources, foreach_res, NULL);
-    printf("scenes:\n");
-    dic_forEach(base.scenes, foreach_scene, NULL);
-
-    bool _running = true;
-    while(_running&&base.is_playing) {
+    bool running = true;
+    while(running) {
+	current_tick = SDL_GetTicks64();
+	elapsed_ticks = (current_tick - last_tick) / 1000.0f;
         while(SDL_PollEvent(&event) != 0) {
             if(event.type == SDL_QUIT) {
-                _running = false;
+                running = false;
                 break;
-            }
-            // Add cdlv_event into your event polling loop for keyhandling:
-            if(base.is_playing) {
-                cdlv_event(&base, _renderer, event);
-            }
+            } else if(event.type == SDL_KEYUP && event.key.repeat == 0) {
+		if(event.key.keysym.sym == SDLK_RETURN) {
+		    // Add user update function where you want to update
+		    // and parse next line
+		    cdlv_user_update(&base);
+		    break;
+		}
+	    }
         }
-        SDL_RenderClear(_renderer);
-        // Add cdlv_loop between your SDL_RenderClear and SDL_RenderPresent:
-        if(base.is_playing) {
-            cdlv_loop(&base, _renderer);
-        }
-        SDL_RenderPresent(_renderer);
+        SDL_RenderClear(renderer);
+
+	// Add cdlv render between clearing the screen and updating it
+	cdlv_render(&base);
+
+	text_render();
+        SDL_RenderPresent(renderer);
+	last_tick = current_tick;
     }
 
-    // cdlv_free will free all data and structures of cdlv.
-    // Use it only when you're done with cdlv in program.
-    // If you want to change game state from CDLV to something else,
-    // it's better to use cdlv_stop(cdlv*).
-    cdlv_free(&base);
+    // Unset script and unload resources
+    cdlv_unset_script(&base);
 
-    SDL_DestroyRenderer(_renderer);
-    SDL_DestroyWindow(_window);
+    text_free();
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
     TTF_Quit();
     IMG_Quit();
     SDL_Quit();
+}
+
+int create_text() {
+    text = malloc(sizeof(struct text));
+    if(!text) return 0;
+    text->font = NULL;
+    text->glyphs = NULL;
+    text->tex = NULL;
+    text->color.r = config.text_color.r;
+    text->color.g = config.text_color.g;
+    text->color.b = config.text_color.b;
+    text->color.a = config.text_color.a;
+    text->bg.r = 0;
+    text->bg.g = 0;
+    text->bg.b = 0;
+    text->bg.a = 128;
+    text->font_size = config.text_size;
+    text->x = config.text_xy.x;
+    text->y = config.text_xy.y;
+    text->w = 0;
+    text->h = 0;
+    text->wrap = config.text_wrap;
+    text->current_char = 0;
+    memset(text->rendered, 0, cdlv_max_string_size);
+    text->content_size = 0;
+    text->accum = 0.0f;
+    text->font = TTF_OpenFont(config.text_font, text->font_size);
+    if(!text->font) return 0;
+    SDL_Surface* s = NULL;
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+    s = SDL_CreateRGBSurface(0, cdlv_font_atlas_size, cdlv_font_atlas_size,
+            32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+#else
+    s = SDL_CreateRGBSurface(0, cdlv_font_atlas_size, cdlv_font_atlas_size,
+            32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+#endif
+    if(!s) return 0;
+    text->glyphs = calloc(cdlv_ascii_count, sizeof(SDL_Rect));
+    if(!text->glyphs) return 0;
+    SDL_Rect dest = {0, 0, 0, 0};
+    for(uint32_t i=' '; i<='~'; ++i) {
+        SDL_Surface* g = NULL;
+        if(config.text_render_bg)
+            g = TTF_RenderGlyph32_Shaded(text->font, i, text->color, text->bg);
+        else
+            g = TTF_RenderGlyph32_Blended(text->font, i, text->color);
+        if(!g) return 0;
+        SDL_SetSurfaceBlendMode(g, SDL_BLENDMODE_NONE);
+        int minx = 0;
+        int maxx = 0;
+        int miny = 0;
+        int maxy = 0;
+        TTF_GlyphMetrics32(text->font, i, &minx, &maxx, &miny, &maxy, NULL);
+        dest.w = maxx - minx;
+        dest.h = maxy - miny;
+        if(dest.x + dest.w >= cdlv_font_atlas_size) {
+            dest.x = 0;
+            dest.y = dest.h + TTF_FontLineSkip(text->font);
+            if(dest.y + dest.h >= cdlv_font_atlas_size) return 0;
+        }
+
+        SDL_BlitSurface(g, NULL, s, &dest);
+        text->glyphs[i].x = dest.x;
+        text->glyphs[i].y = dest.y;
+        text->glyphs[i].w = dest.w;
+        text->glyphs[i].h = dest.h;
+        SDL_FreeSurface(g);
+        dest.x += dest.w;
+    }
+    text->tex = SDL_CreateTextureFromSurface(renderer, s);
+    if(!text->tex) return 0;
+    text->w = s->w;
+    text->h = s->h;
+    SDL_FreeSurface(s);
+    return 1;
+}
+
+void text_type() {
+    text->accum += elapsed_ticks * config.text_speed;
+    if(text->accum > 1) {
+        if(text->current_char < text->content_size) {
+            text->accum = 0;
+            text->rendered[text->current_char] = text->content[text->current_char];
+            text->current_char++;
+        }
+    }
+}
+
+void text_retype() {
+    memset(text->rendered, 0, cdlv_max_string_size);
+    text->current_char = 0;
+}
+
+void text_update(const char* content) {
+    text->content_size = strlen(content) + 1;
+    if(text->content_size) {
+        if(text->content_size > cdlv_max_string_size)
+            strncpy(text->content, content, cdlv_max_string_size-1);
+        else {
+            memset(text->content, 0, cdlv_max_string_size);
+            strcpy(text->content, content);
+        }
+    }
+    text_retype();
+    if(!config.text_speed) {
+        strcpy(text->rendered, text->content);
+        text->current_char = text->content_size;
+    }
+}
+
+void text_draw_line(size_t x, size_t y, const char* line) {
+    size_t length = strlen(line);
+    SDL_Rect dest = {0, 0, 0, 0};
+    for(size_t i=0; i<length; i++) {
+        unsigned char c = line[i];
+        dest.x = x;
+        dest.y = y;
+        dest.w = text->glyphs[c].w;
+        dest.h = text->glyphs[c].h;
+        SDL_RenderCopy(renderer, text->tex, &text->glyphs[c], &dest);
+        x += text->glyphs[c].w;
+    }
+}
+
+void text_draw_wrap() {
+    char word[cdlv_ascii_count];
+    memset(word, 0, cdlv_ascii_count);
+    char line[text->wrap];
+    memset(line, 0, text->wrap);
+    size_t line_w = 0;
+    size_t word_w = 0;
+    size_t n = 0;
+    size_t x = text->x;
+    size_t y = text->y;
+    size_t length = strlen(text->rendered);
+    for(size_t i=0; i<length; i++) {
+        char c = text->content[i];
+        word_w += text->glyphs[(int)c].w;
+        if(c != ' ' && (c != '\n' || c != '\r')) word[n++] = c;
+        if(c == ' ' || i == length-1) {
+            if(line_w + word_w >= text->wrap) {
+                text_draw_line(x, y, line);
+                memset(line, 0, text->wrap);
+                y += TTF_FontLineSkip(text->font);
+                line_w = 0;
+            } else if(line_w != 0) strcat(line, " ");
+            strcat(line, word);
+            line_w += word_w;
+            memset(word, 0, cdlv_ascii_count);
+            word_w = 0;
+            n = 0;
+        } else if(c == '\n' || c == '\r') {
+            strcat(line, word);
+            line_w += word_w;
+            text_draw_line(x, y, line);
+            memset(line, 0, text->wrap);
+            y += TTF_FontLineSkip(text->font);
+            line_w = 0;
+            memset(word, 0, cdlv_ascii_count);
+            word_w = 0;
+            n = 0;
+        }
+    }
+    text_draw_line(x, y, line);
+}
+
+void text_render() {
+    text_type();
+    text_draw_wrap();
+}
+
+void text_free() {
+    if(!text) return;
+    TTF_CloseFont(text->font);
+    if(text->tex) SDL_DestroyTexture(text->tex);
+    if(text->glyphs) free(text->glyphs);
+    free(text);
 }

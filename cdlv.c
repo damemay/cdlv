@@ -1,53 +1,9 @@
 #include "cdlv.h"
-#include "file.h"
 #include "parse.h"
 #include "util.h"
 #include "resource.h"
 #include "scene.h"
-#include "play.h"
-#include "text.h"
-
-void cdlv_init(cdlv* base, uint16_t width, uint16_t height) {
-    base->error = 0;
-    base->call_stop = 0;
-    base->scene_count = 0;
-    base->width = width;
-    base->height = height;
-    base->current_tick = 0;
-    base->last_tick = 0;
-    base->elapsed_ticks = 0.0f;
-    base->accum = 0.0f;
-    base->resources = dic_new(0);
-    base->scenes = dic_new(0);
-    base->can_interact = true;
-    strcpy(base->config.text_font, "../res/fonts/roboto.ttf");
-    base->config.text_size = 32;
-    base->config.text_wrap = 900;
-    base->config.text_xy.x = 50;
-    base->config.text_xy.y = 400;
-    base->config.text_color.r = 0;
-    base->config.text_color.g = 0;
-    base->config.text_color.b = 0;
-    base->config.text_color.a = 255;
-    base->config.text_render_bg = 0;
-    base->config.dissolve_speed = 0;
-    base->config.text_speed = 0;
-    base->config.log_callback = NULL;
-    base->config.error_callback = NULL;
-    base->config.error_user_data = NULL;
-    base->config.log_buffer = NULL;
-    base->config.log_buffer_size = 0;
-}
-
-void cdlv_set_config(cdlv* base, const cdlv_config config) {
-    base->config = config;
-    if(!base->config.text_font[0]) strcpy(base->config.text_font, "../res/fonts/roboto.ttf");
-    if(!base->config.text_size) base->config.text_size = 32;
-    if(!base->config.text_wrap) base->config.text_wrap = 900;
-    if(!base->config.text_xy.x) base->config.text_xy.x = 50;
-    if(!base->config.text_xy.y) base->config.text_xy.y = 400;
-    if(!base->config.text_color.a) base->config.text_color.a = 255;
-}
+#include "hashdict.c/hashdict.h"
 
 static inline cdlv_error extract_path(cdlv* base, const char* path) {
     char* sl = strrchr(path, '/');
@@ -64,80 +20,186 @@ static inline cdlv_error extract_path(cdlv* base, const char* path) {
     cdlv_err(cdlv_ok);
 }
 
-cdlv_error cdlv_add_script(cdlv* base, const char* path) {
+static inline int load_global_resources(void *key, int count, void **value, void *user) {
+    cdlv_resource* resource = (cdlv_resource*)*value;
+    cdlv* base = (cdlv*)user;
+    cdlv_resource_load(base, resource);
+    return 1;
+}
+
+cdlv_error cdlv_set_script(cdlv* base, const char* path) {
     cdlv_error res;
     char* script = NULL;
+
+    base->resources = dic_new(0);
+    base->scenes = dic_new(0);
 
     if((res = extract_path(base, path)) != cdlv_ok) cdlv_err(res);
     if((res = cdlv_read_file_to_str(base, path, &script)) != cdlv_ok) cdlv_err(res);
     if((res = cdlv_parse_script(base, script)) != cdlv_ok) cdlv_err(res);
-
     free(script);
+
+    dic_forEach(base->resources, load_global_resources, base);
+
     cdlv_err(cdlv_ok);
-}
-
-typedef struct {
-    cdlv* base;
-    SDL_Renderer* renderer;
-} loader_args;
-
-static inline int load_global_resources(void *key, int count, void **value, void *user) {
-    cdlv_resource* resource = (cdlv_resource*)*value;
-    loader_args* args = (loader_args*)user;
-    cdlv_resource_load(args->base, resource, args->renderer);
-    return 1;
 }
 
 static inline int unload_global_resources(void *key, int count, void **value, void *user) {
     cdlv_resource* resource = (cdlv_resource*)*value;
-    cdlv_resource_unload(resource);
+    cdlv* base = (cdlv*)user;
+    cdlv_resource_unload(base, resource);
     return 1;
 }
 
-cdlv_error cdlv_play(cdlv* base, SDL_Renderer* renderer) {
-    loader_args args = {
-        .base = base,
-        .renderer = renderer,
-    };
-    dic_forEach(base->resources, load_global_resources, &args);
-    cdlv_error res;
-    cdlv_vec2 xy = {
-        .x = base->config.text_xy.x,
-        .y = base->config.text_xy.y,
-    };
-    cdlv_color color = {
-        .r = base->config.text_color.r,
-        .g = base->config.text_color.g,
-        .b = base->config.text_color.b,
-        .a = base->config.text_color.a,
-    };
-    if((res = cdlv_text_create(base, base->config.text_font, base->config.text_size, base->config.text_wrap, xy, color, renderer)) != cdlv_ok) cdlv_err(res);
-    base->is_playing = true;
-    cdlv_err(cdlv_ok);
-}
-
-cdlv_error cdlv_event(cdlv* base, SDL_Renderer* renderer, SDL_Event event) {
-    cdlv_error res;
-    if((res = cdlv_key_handler(base, renderer, event)) != cdlv_ok) cdlv_err(res);
-    cdlv_err(cdlv_ok);
-}
-
-cdlv_error cdlv_loop(cdlv* base, SDL_Renderer* renderer) {
-    cdlv_error res;
-    if((res = cdlv_play_loop(base, renderer)) != cdlv_ok) cdlv_err(res);
-    cdlv_err(cdlv_ok);
-}
-
-cdlv_error cdlv_stop(cdlv* base) {
-    cdlv_log("Called stop!");
-    base->is_playing = false;
-    dic_forEach(base->resources, unload_global_resources, NULL);
-    cdlv_text_free((cdlv_text*)base->text);
-    cdlv_err(cdlv_ok);
-}
-
-void cdlv_free(cdlv* base) {
+cdlv_error cdlv_unset_script(cdlv* base) {
+    dic_forEach(base->resources, unload_global_resources, base);
     free(base->resources_path);
-    cdlv_resources_free(base->resources);
-    cdlv_scenes_free(base->scenes);
+    cdlv_resources_free(base, base->resources);
+    cdlv_scenes_free(base, base->scenes);
+    cdlv_err(cdlv_ok);
+}
+
+typedef struct {
+    uint16_t index;
+    cdlv_scene* scene;
+} cdlv_scene_searcher;
+
+static inline int find_scene_index(void* key, int count, void** value, void* user) {
+    cdlv_scene* scene = (cdlv_scene*)*value;
+    cdlv_scene_searcher* arg = (cdlv_scene_searcher*)user;
+    if(scene->index == arg->index) {
+        arg->scene = scene;
+        return 0;
+    }
+    return 1;
+}
+
+cdlv_error cdlv_set_scene(cdlv* base, const uint16_t index) {
+    cdlv_scene_searcher search = {
+        .index = index,
+        .scene = NULL,
+    };
+    dic_forEach(base->scenes, find_scene_index, &search);
+    if(search.scene) {
+        cdlv_error res;
+        base->current_scene = search.scene;
+        base->current_scene_index = index;
+        if((res = cdlv_scene_load(base, search.scene)) != cdlv_ok) cdlv_err(res);
+    } else {
+        cdlv_logv("Could not find scene with index: %d", search.index);
+        cdlv_err(cdlv_fatal_error);
+    }
+    cdlv_err(cdlv_ok);
+}
+
+static inline cdlv_error cdlv_parse_prompt(cdlv* base, const char* line, cdlv_scene* scene) {
+    cdlv_error res;
+    if(strstr(line, cdlv_tag_prompt_bg)) {
+        char* name;
+        if((res = cdlv_extract_non_quote(base, line, &name)) != cdlv_ok) cdlv_err(res);
+        if(strchr(name, '.')) {
+            char* vname;
+            if((res = cdlv_extract_filename(base, name, &vname)) != cdlv_ok) cdlv_err(res);
+            if((res = cdlv_add_new_resource_from_path(base, scene->resources_path, vname, name, scene->resources)) != cdlv_ok) cdlv_err(res);
+            if(dic_find(scene->resources, vname, strlen(vname))) {
+                cdlv_resource* resource = *scene->resources->value;
+                cdlv_resource_load(base, resource);
+                if(resource->type == cdlv_resource_video) {
+                    resource->video->is_playing = true;
+                    if(strstr(line, cdlv_tag_time_loop)) resource->video->loop = true;
+                    else if(strstr(line, cdlv_tag_time_once)) resource->video->loop = false;
+                    // base->accum = 1.1f;
+                }
+                base->current_bg = resource;
+            }
+        } else {
+            if(dic_find(base->resources, name, strlen(name))) {
+                cdlv_resource* resource = *base->resources->value;
+                if(resource->type == cdlv_resource_video) {
+                    resource->video->is_playing = true;
+                    if(strstr(line, cdlv_tag_time_loop)) resource->video->loop = true;
+                    else if(strstr(line, cdlv_tag_time_once)) resource->video->loop = false;
+                    // base->accum = 1.1f;
+                }
+                base->current_bg = resource;
+            } else if(dic_find(scene->resources, name, strlen(name))) {
+                cdlv_resource* resource = *scene->resources->value;
+                if(resource->type == cdlv_resource_video) {
+                    resource->video->is_playing = true;
+                    if(strstr(line, cdlv_tag_time_loop)) resource->video->loop = true;
+                    else if(strstr(line, cdlv_tag_time_once)) resource->video->loop = false;
+                    // base->accum = 1.1f;
+                }
+                base->current_bg = resource;
+            } else {
+                cdlv_logv("Prompt to unknown resource: %s", name);
+                cdlv_err(cdlv_parse_error);
+            }
+        }
+        free(name);
+    }
+    cdlv_err(cdlv_ok);
+}
+
+cdlv_error cdlv_parse_line(cdlv* base) {
+    cdlv_scene* scene = (cdlv_scene*)base->current_scene;
+    if(scene->script->size == 0) {
+        cdlv_log("Scene's script is empty");
+        cdlv_err(cdlv_parse_error);
+    }
+    cdlv_error res;
+    if(base->current_line == scene->script->size) {
+	cdlv_log("At the end of script");
+        if(base->current_scene_index+1 < base->scene_count) {
+	    cdlv_log("Changing scene");
+            if((res = cdlv_set_scene(base, base->current_scene_index+1)) != cdlv_ok) cdlv_err(res);
+	    cdlv_scene* new_scene = (cdlv_scene*)base->current_scene;
+	    if(new_scene->loaded) {
+		base->current_line = 0;
+		if((res = cdlv_parse_line(base)) != cdlv_ok) cdlv_err(res);
+	    }
+        } else {
+	    cdlv_log("Setting end to true");
+            base->end = true;
+        }
+    } else if(base->current_line < scene->script->size) {
+        char* line = SCL_ARRAY_GET(scene->script, base->current_line, char*);
+        if(!line) cdlv_err(cdlv_fatal_error);
+        if(line[0] == '@') {
+            if((res = cdlv_parse_prompt(base, line, scene)) != cdlv_ok) cdlv_err(res);
+            ++base->current_line;
+            if((res = cdlv_parse_line(base)) != cdlv_ok) cdlv_err(res);
+        } else {
+	    if(base->user_config.line_callback)
+		base->user_config.line_callback(line, base->user_config.user_data);
+	}
+    }
+    cdlv_err(cdlv_ok);
+}
+
+cdlv_error cdlv_user_update(cdlv* base) {
+    if(base->user_config.update_callback) {
+	int cb_res = base->user_config.update_callback(base->user_config.user_data);
+	if(cb_res == 0) cdlv_err(cdlv_ok);
+    }
+    cdlv_error res;
+    ++base->current_line;
+    if((res = cdlv_parse_line(base)) != cdlv_ok) cdlv_err(res);
+    cdlv_err(cdlv_ok);
+}
+
+cdlv_error cdlv_render(cdlv* base) {
+    cdlv_resource* bg = (cdlv_resource*)base->current_bg;
+    if(!bg) cdlv_err(cdlv_ok);
+    if(bg->type == cdlv_resource_image) {
+	if(base->image_config.render_callback)
+	    base->image_config.render_callback(bg->image, base->image_config.user_data);
+    } else if(bg->type == cdlv_resource_video) {
+        cdlv_error res;
+        if((res = cdlv_play_video(base, bg->video)) != cdlv_ok) cdlv_err(res);
+	base->video_config.change_frame_bool = false;
+	if(base->image_config.render_callback)
+	    base->image_config.render_callback(bg->video->texture, base->video_config.user_data);
+    }
+    cdlv_err(cdlv_ok);
 }

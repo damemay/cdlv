@@ -8,8 +8,7 @@ set(CMAKE_C_COMPILER gcc)
 set(CMAKE_C_STANDARD 11)
     
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
-#    add_compile_options(-O1 -g -fsanitize=address -fno-omit-frame-pointer)
-    add_compile_options(-g -Wall -Werror -fsanitize=undefined)
+    add_compile_options(-O1 -g -Wall -Werror -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer)
 else()
     add_compile_options(-O2)
 endif()
@@ -26,8 +25,6 @@ if(CDLV_MONGOOSE AND CDLV_MDLV_SERVER)
         parse.c
         resource.c
         scene.c
-        file.c
-        text.c
         mdlv.c
         hashdict.c/hashdict.c
         mongoose/mongoose.c
@@ -41,8 +38,6 @@ else()
         parse.c
         resource.c
         scene.c
-        file.c
-        text.c
         hashdict.c/hashdict.c
         array.c
     )
@@ -61,16 +56,31 @@ if(CDLV_SAMPLE)
         ${SDL2TTF_INCLUDE_DIRS}
     )
         
-    target_link_libraries(${EXEC_NAME}
-        SDL2::SDL2
-        SDL2_image
-        SDL2_ttf
-        avcodec
-        avformat
-        avutil
-        swscale
-        ${PROJECT_NAME}
-    )
+    if(CMAKE_BUILD_TYPE MATCHES "Debug")
+	target_link_libraries(${EXEC_NAME}
+    	    SDL2::SDL2
+    	    SDL2_image
+    	    SDL2_ttf
+    	    avcodec
+    	    avformat
+    	    avutil
+    	    swscale
+	    -fsanitize=address
+	    -fsanitize=undefined
+    	    ${PROJECT_NAME}
+    	)
+    else()
+	target_link_libraries(${EXEC_NAME}
+    	    SDL2::SDL2
+    	    SDL2_image
+    	    SDL2_ttf
+    	    avcodec
+    	    avformat
+    	    avutil
+    	    swscale
+    	    ${PROJECT_NAME}
+    	)
+    endif()
 endif()
 
 if(CDLV_MDLV_SERVER)
@@ -80,20 +90,23 @@ if(CDLV_MDLV_SERVER)
         server.c
     )
         
-    include_directories(${MDLV_EXEC_NAME}
-        ${SDL2_INCLUDE_DIRS}
-        ${SDL2IMAGE_INCLUDE_DIRS}
-        ${SDL2TTF_INCLUDE_DIRS}
-    )
-        
-    target_link_libraries(${MDLV_EXEC_NAME}
-        SDL2::SDL2
-        SDL2_image
-        SDL2_ttf
-        avcodec
-        avformat
-        avutil
-        swscale
-        ${PROJECT_NAME}
-    )
+    if(CMAKE_BUILD_TYPE MATCHES "Debug")
+	target_link_libraries(${MDLV_EXEC_NAME}
+    	    avcodec
+    	    avformat
+    	    avutil
+    	    swscale
+	    -fsanitize=address
+	    -fsanitize=undefined
+    	    ${PROJECT_NAME}
+    	)
+    else()
+	target_link_libraries(${MDLV_EXEC_NAME}
+    	    avcodec
+    	    avformat
+    	    avutil
+    	    swscale
+    	    ${PROJECT_NAME}
+    	)
+    endif()
 endif()

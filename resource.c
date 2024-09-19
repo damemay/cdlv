@@ -1,11 +1,13 @@
 #include "resource.h"
 #include "util.h"
+#include "cdlv.h"
+#include "hashdict.c/hashdict.h"
 
 cdlv_error cdlv_resource_new(cdlv* base, const cdlv_resource_type type, char* path, cdlv_resource** resource) {
     cdlv_resource* new_resource = malloc(sizeof(cdlv_resource));
     if(!new_resource) {
         cdlv_logv("Could not allocate memory for resource from file: %s", path);
-        cdlv_err(cdlv_memory_error);
+        cdlv_err(cdlv_callback_error);
     }
     new_resource->type = type;
     new_resource->loaded = false;
@@ -15,16 +17,16 @@ cdlv_error cdlv_resource_new(cdlv* base, const cdlv_resource_type type, char* pa
     cdlv_err(cdlv_ok);
 }
 
-static inline cdlv_error cdlv_resource_image_load(cdlv* base, cdlv_resource* resource, SDL_Renderer* renderer) {
-    resource->image = IMG_LoadTexture(renderer, resource->path);
+static inline cdlv_error cdlv_resource_image_load(cdlv* base, cdlv_resource* resource) {
+    if(base->image_config.load_callback)
+	resource->image = base->image_config.load_callback(resource->path, base->image_config.user_data);
     if(!resource->image) {
-        cdlv_logv("%s", SDL_GetError());
-        cdlv_err(cdlv_file_error);
+	cdlv_err(cdlv_callback_error);
     }
     cdlv_err(cdlv_ok);
 }
 
-static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* resource, SDL_Renderer* renderer) {
+static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* resource) {
     resource->video = malloc(sizeof(cdlv_video));
     if(!resource->video) {
         cdlv_log("Could not allocate memory for new video");
@@ -77,74 +79,119 @@ static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* res
         cdlv_log("Could not allocate memory for video frame");
         cdlv_err(cdlv_memory_error);
     }
-    resource->video->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_YV12, SDL_TEXTUREACCESS_STREAMING, resource->video->codec_context->width, resource->video->codec_context->height);
+    if(base->video_config.load_callback)
+	resource->video->texture = base->video_config.load_callback(resource->video->codec_context->width, resource->video->codec_context->height, base->video_config.user_data);
     if(!resource->video->texture) {
-        cdlv_logv("%s", SDL_GetError());
-        cdlv_err(cdlv_memory_error);
+	cdlv_err(cdlv_callback_error);
     }
     resource->video->packet = av_packet_alloc();
     if(!resource->video->packet) {
         cdlv_log("Could not allocate memory for video packet");
         cdlv_err(cdlv_memory_error);
     }
-    resource->video->rect.w = resource->video->codec_context->width;
-    resource->video->rect.h = resource->video->codec_context->height;
+    resource->video->dimensions.x = resource->video->codec_context->width;
+    resource->video->dimensions.y = resource->video->codec_context->height;
     resource->video->fps = av_q2d(resource->video->format_context->streams[resource->video->video_stream]->r_frame_rate);
 
     cdlv_err(cdlv_ok);
 }
 
-cdlv_error cdlv_resource_load(cdlv* base, cdlv_resource* resource, SDL_Renderer* renderer) {
+cdlv_error cdlv_resource_load(cdlv* base, cdlv_resource* resource) {
     cdlv_error res;
     if(resource->type == cdlv_resource_image) {
-        if((res = cdlv_resource_image_load(base, resource, renderer)) != cdlv_ok) cdlv_err(res);
+        if((res = cdlv_resource_image_load(base, resource)) != cdlv_ok) cdlv_err(res);
     } else if(resource->type == cdlv_resource_video) {
-        if((res = cdlv_resource_video_load(base, resource, renderer)) != cdlv_ok) cdlv_err(res);
+        if((res = cdlv_resource_video_load(base, resource)) != cdlv_ok) cdlv_err(res);
     }
     resource->loaded = true;
     cdlv_logv("loaded resource: %s", resource->path);
     cdlv_err(cdlv_ok);
 }
 
-static inline void cdlv_resource_image_unload(cdlv_resource* resource) {
-    SDL_DestroyTexture(resource->image);
+static inline void cdlv_resource_image_unload(cdlv* base, cdlv_resource* resource) {
+    if(base->image_config.free_callback)
+	base->image_config.free_callback(resource->image);
     resource->image = NULL;
 } 
 
-static inline void cdlv_resource_video_unload(cdlv_resource* resource) {
+static inline void cdlv_resource_video_unload(cdlv* base, cdlv_resource* resource) {
     av_packet_free(&resource->video->packet);
     av_frame_free(&resource->video->frame);
     avcodec_free_context(&resource->video->codec_context);
     avformat_close_input(&resource->video->format_context);
-    SDL_DestroyTexture(resource->video->texture);
+    if(base->video_config.free_callback)
+	base->video_config.free_callback(resource->video->texture);
     free(resource->video);
     resource->video = NULL;
 } 
 
-void cdlv_resource_unload(cdlv_resource* resource) {
-    if(resource->type == cdlv_resource_image) {
-        cdlv_resource_image_unload(resource);
-    } else if(resource->type == cdlv_resource_video) {
-        cdlv_resource_video_unload(resource);
-    }
+void cdlv_resource_unload(cdlv* base, cdlv_resource* resource) {
+    if(resource->type == cdlv_resource_image) cdlv_resource_image_unload(base, resource);
+    else if(resource->type == cdlv_resource_video) cdlv_resource_video_unload(base, resource);
     resource->loaded = false;
 }
 
-void cdlv_resource_free(cdlv_resource* resource) {
-    if(resource->loaded) {
-        cdlv_resource_unload(resource);
-    }
+void cdlv_resource_free(cdlv* base, cdlv_resource* resource) {
+    if(resource->loaded) cdlv_resource_unload(base, resource);
     free(resource->path);
     free(resource);
 }
 
 static inline int free_res(void *key, int count, void **value, void *user) {
     cdlv_resource* res = (cdlv_resource*)*value;
-    cdlv_resource_free(res);
+    cdlv* base = (cdlv*)user;
+    cdlv_resource_free(base, res);
     return 1;
 }
 
-void cdlv_resources_free(cdlv_dict* resources) {
-    dic_forEach(resources, free_res, NULL);
+void cdlv_resources_free(cdlv* base, cdlv_dict* resources) {
+    dic_forEach(resources, free_res, base);
     dic_delete(resources);
+}
+
+cdlv_error cdlv_play_video(cdlv* base, cdlv_video* video) {
+    int ret = 0;
+    if(video->is_playing) {
+	if(base->video_config.change_frame_bool) {
+	    if((ret = av_read_frame(video->format_context, video->packet)) == AVERROR_EOF) {
+    	        if(!video->loop) video->eof = true;
+    	        av_seek_frame(video->format_context, video->video_stream, 0, 0);
+    	        av_packet_unref(video->packet);
+    	        cdlv_err(cdlv_ok);
+    	    }
+    	    if(video->packet->stream_index == video->video_stream || video->eof) {
+    	        if(video->eof) {
+    	            if((ret = avcodec_send_packet(video->codec_context, NULL)) < 0) cdlv_log("Nothing to drain");
+    	        } else {
+    	            if((ret = avcodec_send_packet(video->codec_context, video->packet)) < 0) {
+    	                cdlv_log("Could not send packet for decoding");
+    	                cdlv_err(cdlv_video_error);
+    	            }
+    	        }
+    	        if(ret >= 0 || video->eof) {
+    	            ret = avcodec_receive_frame(video->codec_context, video->frame);
+    	            if(ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+    	                cdlv_err(cdlv_ok);
+    	            } else if(ret < 0) {
+    	                cdlv_log("Could not decode frame");
+    	                cdlv_err(cdlv_video_error);
+    	            }
+    	            cdlv_logv("Frame %ld/%ld pts %ld dts %ld", video->codec_context->frame_num, video->format_context->streams[video->video_stream]->nb_frames, video->frame->pts, video->frame->pkt_dts);
+    	            if (video->frame->linesize[0] > 0 && video->frame->linesize[1] > 0 && video->frame->linesize[2] > 0) {
+			if(base->video_config.update_callback)
+			    base->video_config.update_callback(video, false, base->video_config.user_data);
+    	            } else if (video->frame->linesize[0] < 0 && video->frame->linesize[1] < 0 && video->frame->linesize[2] < 0) {
+			if(base->video_config.update_callback)
+			    base->video_config.update_callback(video, true, base->video_config.user_data);
+    	            }
+    	            if(video->frame->pts+video->frame->duration == video->format_context->streams[video->video_stream]->duration && video->eof) {
+    	                video->is_playing = false;
+    	                cdlv_err(cdlv_ok);
+    	            }
+    	        }
+    	    }
+    	    av_packet_unref(video->packet);
+	}
+    }
+    cdlv_err(cdlv_ok);
 }

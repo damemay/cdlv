@@ -1,9 +1,11 @@
 #ifndef CDLV_H
 #define CDLV_H
 
+#include <stdlib.h>
+#include <libavcodec/avcodec.h>
+#include <libavutil/imgutils.h>
+#include <libavformat/avformat.h>
 #include "common.h"
-#include "array.h"
-#include "hashdict.c/hashdict.h"
 
 typedef enum {
     cdlv_ok,
@@ -13,36 +15,92 @@ typedef enum {
     cdlv_video_error,
     cdlv_parse_error,
     cdlv_fatal_error,
+    cdlv_callback_error,
 } cdlv_error;
+
 typedef void (*cdlv_log_callback)(char* buf);
 typedef void (*cdlv_error_callback)(cdlv_error error, void* user_data);
 
-typedef struct cdlv_config {
-    char text_font[cdlv_max_string_size];
-    uint8_t text_size;
-    cdlv_vec2 text_xy;
-    uint16_t text_wrap;
-    cdlv_color text_color;
-    int text_render_bg;
-    uint8_t text_speed;
-    uint8_t dissolve_speed;
-    cdlv_log_callback log_callback;
-    cdlv_error_callback error_callback;
-    void* error_user_data;
-    char* log_buffer;
-    size_t log_buffer_size;
-} cdlv_config;
+typedef struct cdlv_log_config {
+    cdlv_log_callback callback;
+    char* buffer;
+    size_t buffer_size;
+} cdlv_log_config;
+
+typedef struct cdlv_error_config {
+    cdlv_error_callback callback;
+    void* user_data;
+} cdlv_error_config;
+
+typedef enum {
+    cdlv_resource_image,
+    cdlv_resource_video,
+} cdlv_resource_type;
+
+typedef struct cdlv_video {
+    AVFormatContext* format_context;
+    AVCodecContext* codec_context;
+    AVCodec* codec;
+    AVFrame* frame;
+    AVPacket* packet;
+    int video_stream;
+    cdlv_vec2 dimensions;
+    double fps;
+    bool is_playing;
+    bool loop;
+    bool eof;
+    void* texture;
+} cdlv_video;
+
+typedef struct cdlv_resource {
+    cdlv_resource_type type;
+    bool loaded;
+    char* path;
+    union {
+        cdlv_video* video;
+        void* image;
+    };
+} cdlv_resource;
+
+typedef void* (*cdlv_image_load_cb)(const char* path, void* user_data);
+typedef void (*cdlv_image_render_cb)(void* image, void* user_data);
+typedef void (*cdlv_image_free_cb)(void* image);
+
+typedef struct cdlv_image_config {
+    cdlv_image_load_cb load_callback;
+    cdlv_image_render_cb render_callback;
+    cdlv_image_free_cb free_callback;
+    void* user_data;
+} cdlv_image_config;
+
+typedef void* (*cdlv_video_load_cb)(const uint64_t width, const uint64_t height, void* user_data);
+typedef void (*cdlv_video_update_cb)(cdlv_video* video, bool minus, void* user_data);
+typedef void (*cdlv_video_free_cb)(void* texture);
+
+typedef struct cdlv_video_config {
+    cdlv_video_load_cb load_callback;
+    cdlv_video_free_cb free_callback;
+    cdlv_video_update_cb update_callback;
+    void* user_data;
+    bool change_frame_bool;
+} cdlv_video_config;
+
+typedef int (*cdlv_user_update_cb)(void* user_data);
+typedef void (*cdlv_line_cb)(const char* line, void* user_data);
+typedef struct cdlv_user_config {
+    cdlv_user_update_cb update_callback;
+    cdlv_line_cb line_callback;
+    void* user_data;
+} cdlv_user_config;
 
 typedef struct cdlv {
-    bool call_stop;
-    bool is_playing;
-    bool can_interact;
+    cdlv_log_config log_config;
+    cdlv_error_config error_config;
+    cdlv_image_config image_config;
+    cdlv_video_config video_config;
+    cdlv_user_config user_config;
 
-    cdlv_error error;
-
-    uint16_t width, height;
-
-    cdlv_config config;
+    bool end;
 
     cdlv_dict* scenes;
     uint16_t scene_count;
@@ -52,24 +110,17 @@ typedef struct cdlv {
     void* current_scene;
     void* current_bg;
 
-    uint64_t current_tick, last_tick;
-    float accum, elapsed_ticks;
-
     char* resources_path;
     cdlv_dict* resources;
-
-    void* text;
 } cdlv;
 
-void cdlv_init(cdlv* base, uint16_t width, uint16_t height);
-void cdlv_set_config(cdlv* base, const cdlv_config config);
-cdlv_error cdlv_add_script(cdlv* base, const char* path);
+cdlv_error cdlv_set_script(cdlv* base, const char* path);
+cdlv_error cdlv_unset_script(cdlv* base);
+cdlv_error cdlv_set_scene(cdlv* base, const uint16_t index);
+cdlv_error cdlv_render(cdlv* base);
+cdlv_error cdlv_parse_line(cdlv* base);
+cdlv_error cdlv_user_update(cdlv* base);
 
-cdlv_error cdlv_play(cdlv* base, SDL_Renderer* renderer);
-cdlv_error cdlv_event(cdlv* base, SDL_Renderer* renderer, SDL_Event event);
-cdlv_error cdlv_loop(cdlv* base, SDL_Renderer* renderer);
-cdlv_error cdlv_stop(cdlv* base);
-
-void cdlv_free(cdlv* base);
+cdlv_error cdlv_play_video(cdlv* base, cdlv_video* video);
 
 #endif

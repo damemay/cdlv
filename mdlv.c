@@ -1,8 +1,8 @@
 #include "mdlv.h"
 #include "mongoose/mongoose.h"
 #include "cJSON/cJSON.h"
-#include "resource.h"
 #include "scene.h"
+#include "hashdict.c/hashdict.h"
 
 static int foreach_res(void *key, int count, void **value, void *user) {
     cdlv_resource* res = (cdlv_resource*)*value;
@@ -92,10 +92,10 @@ static void fn(struct mg_connection* c, int ev, void* ev_data) {
 		current = current->next;
 	    }
 	    if(!found) {
-		free(filename);
 		char* error = mg_mprintf("%.*s is not listed in loaded scripts", strlen(filename), filename);
 	        mg_http_reply(c, 500, "Content-Type: application/json\r\n",
 			"{%m: %m, %m: %m}", MG_ESC("type"), MG_ESC("error"), MG_ESC("msg"), MG_ESC(error));
+		free(filename);
 		free(error);
 	        return;
 	    }
@@ -217,10 +217,9 @@ cdlv_error mdlv_init(mdlv* base) {
 	strcpy(current->name, entry->d_name);                
 	current->instance = malloc(sizeof(cdlv));
 	if(!current->instance) return cdlv_memory_error;
-    	cdlv_init(current->instance, 0, 0);
 	char path[cdlv_max_string_size];
 	snprintf(path, cdlv_max_string_size-1, "%s%s", base->path, current->name);
-	cdlv_add_script(current->instance, path);
+	cdlv_set_script(current->instance, path);
 	current->next = NULL;
 	i++;
     }
@@ -233,7 +232,7 @@ cdlv_error mdlv_init(mdlv* base) {
 void mdlv_free(mdlv* base) {
     for(mdlv_script_t* current = base->scripts; current != NULL; current = current->next) {
 	free(current->name);
-	cdlv_free(current->instance);
+	cdlv_unset_script(current->instance);
     }
     mg_mgr_free(&base->manager);
 }

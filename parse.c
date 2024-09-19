@@ -1,7 +1,7 @@
 #include "parse.h"
 #include "util.h"
-#include "resource.h"
 #include "scene.h"
+#include "hashdict.c/hashdict.h"
 
 static inline size_t strspn_whitespace(const char* line) {
     return strspn(line, " \t");
