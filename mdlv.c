@@ -217,6 +217,16 @@ cdlv_error mdlv_init(mdlv* base) {
 	strcpy(current->name, entry->d_name);                
 	current->instance = malloc(sizeof(cdlv));
 	if(!current->instance) return cdlv_memory_error;
+	current->instance->error_config.callback = NULL;
+	current->instance->image_config.free_callback = NULL;
+	current->instance->image_config.load_callback = NULL;
+	current->instance->image_config.render_callback = NULL;
+	current->instance->user_config.line_callback = NULL;
+	current->instance->user_config.update_callback = NULL;
+	current->instance->log_config.callback = NULL;
+	current->instance->video_config.load_callback = NULL;
+	current->instance->video_config.free_callback = NULL;
+	current->instance->video_config.update_callback = NULL;
 	char path[cdlv_max_string_size];
 	snprintf(path, cdlv_max_string_size-1, "%s%s", base->path, current->name);
 	cdlv_set_script(current->instance, path);
