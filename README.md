@@ -63,7 +63,7 @@ Refer to [server.c](server.c) and [web_root/script.js](web_root/script.js) for w
 # Building
 Building binaries requires linking with `ffmpeg` (and `SDL2`, `SDL2_image`, `SDL2_ttf` for `cdlv-sample`) libraries installed on system.
 
-```
+```shell
 git clone --recurse-submodules https://github.com/damemay/cdlv.git
 cd cdlv
 mkdir build && cd build

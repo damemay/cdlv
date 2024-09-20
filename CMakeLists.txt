@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
-project(cdlv)
+project(cdlv VERSION 1.75.4)
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_C_STANDARD 11)
     
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
     add_compile_options(-O1 -g -Wall -Werror -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer)
 else()
-    add_compile_options(-O2)
+    add_compile_options(-O2 -Wall -Werror)
 endif()
 
 option(CDLV_FFMPEG "Include FFmpeg" ON)
@@ -18,14 +18,8 @@ if(CDLV_FFMPEG)
     add_compile_definitions(CDLV_FFMPEG)
 endif()
 
-if(CDLV_SAMPLE)
-    find_package(SDL2 REQUIRED)
-    find_package(SDL2_image REQUIRED)
-    find_package(SDL2_ttf REQUIRED)
-endif()
-    
 if(CDLV_MONGOOSE AND CDLV_MDLV_SERVER)
-    add_library(${PROJECT_NAME} STATIC
+    add_library(${PROJECT_NAME}
         cdlv.c
         util.c
         parse.c
@@ -38,7 +32,7 @@ if(CDLV_MONGOOSE AND CDLV_MDLV_SERVER)
         array.c
     )
 else()
-    add_library(${PROJECT_NAME} STATIC
+    add_library(${PROJECT_NAME}
         cdlv.c
         util.c
         parse.c
@@ -50,6 +44,10 @@ else()
 endif()
 
 if(CDLV_SAMPLE)
+    find_package(SDL2 REQUIRED)
+    find_package(SDL2_image REQUIRED)
+    find_package(SDL2_ttf REQUIRED)
+
     set(EXEC_NAME cdlv-sample)
     
     add_executable(${EXEC_NAME}

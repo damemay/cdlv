@@ -1,7 +1,6 @@
 #ifndef CDLV_SCENE_H
 #define CDLV_SCENE_H
 
-#include "common.h"
 #include "array.h"
 #include "cdlv.h"
 

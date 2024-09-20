@@ -2,10 +2,41 @@
 #define CDLV_H
 
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
 #include <libavformat/avformat.h>
-#include "common.h"
+
+#define cdlv_max_string_size    UINT16_MAX
+#define cdlv_small_string       UINT8_MAX
+#define cdlv_max_choice_count   UINT8_MAX
+
+typedef struct dictionary cdlv_dict;
+
+typedef struct cdlv_color {
+    uint8_t r; 
+    uint8_t g; 
+    uint8_t b; 
+    uint8_t a; 
+} cdlv_color;
+
+typedef struct cdlv_vec2 {
+    uint64_t x;
+    uint64_t y;
+} cdlv_vec2;
+
+typedef struct cdlv_yuv_plane {
+    uint8_t* y;
+    uint8_t* u;
+    uint8_t* v;
+} cdlv_yuv_plane;
+
+typedef struct cdlv_yuv_pitch {
+    int y;
+    int u;
+    int v;
+} cdlv_yuv_pitch;
 
 typedef enum {
     cdlv_ok,
