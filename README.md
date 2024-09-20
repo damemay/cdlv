@@ -17,7 +17,11 @@ Easy to implement basically anywhere.
 
 ## In progress
 - extensively test script behaviour
-- fix/extensively test ffmpeg decoding 
+- fix/extensively test ffmpeg decoding
+
+## Documentation
+
+Documentation can be found in [this repository's wiki](https://github.com/damemay/cdlv/wiki/Documentation)
 
 ## Scripting example
 ```
