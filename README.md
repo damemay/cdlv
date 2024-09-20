@@ -10,9 +10,8 @@ Easy to implement basically anywhere.
 - **Simple to setup with callbacks API**
 - **Supports decoding various video formats thanks to ffmpeg**
 
-## Things to come
+## Planned features
 - choices and goto
-- cdlv-menu app
 - more human callback config api
 
 ## In progress
@@ -62,17 +61,17 @@ mdlv_free(&mdlv_base);
 Refer to [server.c](server.c) and [web_root/script.js](web_root/script.js) for working server and browser client implementation.
 
 # Building
-Building binaries requires `ffmpeg` (`SDL2`, `SDL2_image`, `SDL2_ttf` for `cdlv-sample`) libraries installed on system.
+Building binaries requires linking with `ffmpeg` (and `SDL2`, `SDL2_image`, `SDL2_ttf` for `cdlv-sample`) libraries installed on system.
 
 ```
-git clone https://github.com/damemay/cdlv.git
+git clone --recurse-submodules https://github.com/damemay/cdlv.git
 cd cdlv
 mkdir build && cd build
 cmake .. && make
 ```
 
 ## CMake options:
+- `CDLV_FFMPEG=ON` - Include FFmpeg as a library dependency for video decoding when linking
+- `CDLV_MONGOOSE=ON` - Include `mongoose.c` and `mdlv.c` inside library
 - `CDLV_SAMPLE=ON` - Build `cdlv-sample`
-- `CDLV_MONGOOSE=ON` - Include mongoose and mdlv inside library
 - `CDLV_MDLV_SERVER=ON` - Build `mdlv-server`
-- `CDLV_MENU=ON` - Build `cdlv-menu`

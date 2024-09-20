@@ -9,11 +9,13 @@ typedef enum {
 } cdlv_resource_type;
 
 typedef struct cdlv_video {
+#ifdef CDLV_FFMPEG
     AVFormatContext* format_context;
     AVCodecContext* codec_context;
     AVCodec* codec;
     AVFrame* frame;
     AVPacket* packet;
+#endif
     int video_stream;
     cdlv_vec2 dimensions;
     cdlv_yuv_plane plane;

@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
 project(cdlv)
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-find_package(SDL2_ttf REQUIRED)
-    
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_C_STANDARD 11)
     
@@ -13,10 +9,20 @@ else()
     add_compile_options(-O2)
 endif()
 
+option(CDLV_FFMPEG "Include FFmpeg" ON)
+option(CDLV_MONGOOSE "Include mongoose" ON)
 option(CDLV_SAMPLE "Build sample" ON)
-option(CDLV_MONGOOSE "Include mongoose for MDLV" ON)
 option(CDLV_MDLV_SERVER "Build MDLV server" ON)
-option(CDLV_MENU "Build menu app" ON)
+
+if(CDLV_FFMPEG)
+    add_compile_definitions(CDLV_FFMPEG)
+endif()
+
+if(CDLV_SAMPLE)
+    find_package(SDL2 REQUIRED)
+    find_package(SDL2_image REQUIRED)
+    find_package(SDL2_ttf REQUIRED)
+endif()
     
 if(CDLV_MONGOOSE AND CDLV_MDLV_SERVER)
     add_library(${PROJECT_NAME} STATIC
@@ -101,12 +107,18 @@ if(CDLV_MDLV_SERVER)
     	    ${PROJECT_NAME}
     	)
     else()
-	target_link_libraries(${MDLV_EXEC_NAME}
-    	    avcodec
-    	    avformat
-    	    avutil
-    	    swscale
-    	    ${PROJECT_NAME}
-    	)
+	if(CDLV_FFMPEG)
+	    target_link_libraries(${MDLV_EXEC_NAME}
+		avcodec
+		avformat
+		avutil
+		swscale
+		${PROJECT_NAME}
+	    )
+	else()
+	    target_link_libraries(${MDLV_EXEC_NAME}
+		${PROJECT_NAME}
+	    )
+	endif()
     endif()
 endif()

@@ -32,10 +32,11 @@ static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* res
         cdlv_log("Could not allocate memory for new video");
         cdlv_err(cdlv_memory_error);
     }
-    resource->video->format_context = NULL;
     resource->video->is_playing = false;
     resource->video->loop = false;
     resource->video->eof = false;
+#ifdef CDLV_FFMPEG
+    resource->video->format_context = NULL;
     if(avformat_open_input(&resource->video->format_context, resource->path, NULL, NULL) < 0) {
         cdlv_logv("Could not open video file: %s", resource->path);
         cdlv_err(cdlv_file_error);
@@ -92,6 +93,10 @@ static inline cdlv_error cdlv_resource_video_load(cdlv* base, cdlv_resource* res
     resource->video->dimensions.x = resource->video->codec_context->width;
     resource->video->dimensions.y = resource->video->codec_context->height;
     resource->video->fps = av_q2d(resource->video->format_context->streams[resource->video->video_stream]->r_frame_rate);
+#else
+    if(base->video_config.load_callback)
+	resource->video->texture = base->video_config.load_callback(0, 0, base->video_config.user_data);
+#endif
 
     cdlv_err(cdlv_ok);
 }
@@ -115,10 +120,12 @@ static inline void cdlv_resource_image_unload(cdlv* base, cdlv_resource* resourc
 } 
 
 static inline void cdlv_resource_video_unload(cdlv* base, cdlv_resource* resource) {
+#ifdef CDLV_FFMPEG
     av_packet_free(&resource->video->packet);
     av_frame_free(&resource->video->frame);
     avcodec_free_context(&resource->video->codec_context);
     avformat_close_input(&resource->video->format_context);
+#endif
     if(base->video_config.free_callback)
 	base->video_config.free_callback(resource->video->texture);
     free(resource->video);
@@ -150,6 +157,7 @@ void cdlv_resources_free(cdlv* base, cdlv_dict* resources) {
 }
 
 cdlv_error cdlv_play_video(cdlv* base, cdlv_video* video) {
+#ifdef CDLV_FFMPEG
     int ret = 0;
     if(video->is_playing) {
 	if(base->video_config.change_frame_bool) {
@@ -206,5 +214,13 @@ cdlv_error cdlv_play_video(cdlv* base, cdlv_video* video) {
     	    av_packet_unref(video->packet);
 	}
     }
+#else
+    if(video->is_playing) {
+	if(base->video_config.change_frame_bool) {
+    	    if(base->video_config.update_callback)
+    		base->video_config.update_callback(video->plane, video->pitch, video->texture, base->video_config.user_data);
+	}
+    }
+#endif
     cdlv_err(cdlv_ok);
 }
