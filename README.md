@@ -1,7 +1,7 @@
 # cdlv
 Library and scripting system for ADV/VN style games made in pure C.
 
-Easy to implement into basically anywhere.
+Easy to implement basically anywhere.
 
 ## Features
 - **Simple C-inspired scripting language**
