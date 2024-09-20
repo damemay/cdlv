@@ -13,10 +13,11 @@ Easy to implement basically anywhere.
 ## Things to come
 - choices and goto
 - cdlv-menu app
+- more human callback config api
 
 ## In progress
-- scene/script behaviorism tests
-- fix ffmpeg decoding 
+- extensively test script behaviour
+- fix/extensively test ffmpeg decoding 
 
 ## Scripting example
 ```
