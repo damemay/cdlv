@@ -176,13 +176,26 @@ cdlv_error cdlv_play_video(cdlv* base, cdlv_video* video) {
     	                cdlv_log("Could not decode frame");
     	                cdlv_err(cdlv_video_error);
     	            }
-    	            cdlv_logv("Frame %ld/%ld pts %ld dts %ld", video->codec_context->frame_num, video->format_context->streams[video->video_stream]->nb_frames, video->frame->pts, video->frame->pkt_dts);
+    	            //cdlv_logv("Frame %ld/%ld pts %ld dts %ld", video->codec_context->frame_num, video->format_context->streams[video->video_stream]->nb_frames, video->frame->pts, video->frame->pkt_dts);
+
     	            if (video->frame->linesize[0] > 0 && video->frame->linesize[1] > 0 && video->frame->linesize[2] > 0) {
+			video->plane.y = video->frame->data[0];
+			video->plane.u = video->frame->data[1];
+			video->plane.v = video->frame->data[2];
+			video->pitch.y = video->frame->linesize[0];
+			video->pitch.u = video->frame->linesize[1];
+			video->pitch.v = video->frame->linesize[2];
 			if(base->video_config.update_callback)
-			    base->video_config.update_callback(video, false, base->video_config.user_data);
+			    base->video_config.update_callback(video->plane, video->pitch, video->texture, base->video_config.user_data);
     	            } else if (video->frame->linesize[0] < 0 && video->frame->linesize[1] < 0 && video->frame->linesize[2] < 0) {
+			video->plane.y = video->frame->data[0] + video->frame->linesize[0] * (video->frame->height- 1);
+			video->plane.u = video->frame->data[1] + video->frame->linesize[1] * (AV_CEIL_RSHIFT(video->frame->height, 1) - 1);
+			video->plane.v = video->frame->data[2] + video->frame->linesize[2] * (AV_CEIL_RSHIFT(video->frame->height, 1) - 1);
+			video->pitch.y = -video->frame->linesize[0];
+			video->pitch.u = -video->frame->linesize[1];
+			video->pitch.v = -video->frame->linesize[2];
 			if(base->video_config.update_callback)
-			    base->video_config.update_callback(video, true, base->video_config.user_data);
+			    base->video_config.update_callback(video->plane, video->pitch, video->texture, base->video_config.user_data);
     	            }
     	            if(video->frame->pts+video->frame->duration == video->format_context->streams[video->video_stream]->duration && video->eof) {
     	                video->is_playing = false;

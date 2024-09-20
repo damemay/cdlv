@@ -23,5 +23,16 @@ typedef struct cdlv_vec2 {
     uint64_t x;
     uint64_t y;
 } cdlv_vec2;
+typedef struct cdlv_yuv_plane {
+    uint8_t* y;
+    uint8_t* u;
+    uint8_t* v;
+} cdlv_yuv_plane;
+typedef struct cdlv_yuv_pitch {
+    int y;
+    int u;
+    int v;
+} cdlv_yuv_pitch;
+
 
 #endif

@@ -32,36 +32,6 @@ typedef struct cdlv_error_config {
     void* user_data;
 } cdlv_error_config;
 
-typedef enum {
-    cdlv_resource_image,
-    cdlv_resource_video,
-} cdlv_resource_type;
-
-typedef struct cdlv_video {
-    AVFormatContext* format_context;
-    AVCodecContext* codec_context;
-    AVCodec* codec;
-    AVFrame* frame;
-    AVPacket* packet;
-    int video_stream;
-    cdlv_vec2 dimensions;
-    double fps;
-    bool is_playing;
-    bool loop;
-    bool eof;
-    void* texture;
-} cdlv_video;
-
-typedef struct cdlv_resource {
-    cdlv_resource_type type;
-    bool loaded;
-    char* path;
-    union {
-        cdlv_video* video;
-        void* image;
-    };
-} cdlv_resource;
-
 typedef void* (*cdlv_image_load_cb)(const char* path, void* user_data);
 typedef void (*cdlv_image_render_cb)(void* image, void* user_data);
 typedef void (*cdlv_image_free_cb)(void* image);
@@ -74,7 +44,7 @@ typedef struct cdlv_image_config {
 } cdlv_image_config;
 
 typedef void* (*cdlv_video_load_cb)(const uint64_t width, const uint64_t height, void* user_data);
-typedef void (*cdlv_video_update_cb)(cdlv_video* video, bool minus, void* user_data);
+typedef void (*cdlv_video_update_cb)(cdlv_yuv_plane plane, cdlv_yuv_pitch pitch, void* texture, void* user_data);
 typedef void (*cdlv_video_free_cb)(void* texture);
 
 typedef struct cdlv_video_config {
@@ -116,11 +86,7 @@ typedef struct cdlv {
 
 cdlv_error cdlv_set_script(cdlv* base, const char* path);
 cdlv_error cdlv_unset_script(cdlv* base);
-cdlv_error cdlv_set_scene(cdlv* base, const uint16_t index);
 cdlv_error cdlv_render(cdlv* base);
-cdlv_error cdlv_parse_line(cdlv* base);
 cdlv_error cdlv_user_update(cdlv* base);
-
-cdlv_error cdlv_play_video(cdlv* base, cdlv_video* video);
 
 #endif

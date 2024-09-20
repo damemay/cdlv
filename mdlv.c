@@ -1,8 +1,9 @@
 #include "mdlv.h"
 #include "mongoose/mongoose.h"
 #include "cJSON/cJSON.h"
-#include "scene.h"
 #include "hashdict.c/hashdict.h"
+#include "scene.h"
+#include "resource.h"
 
 static int foreach_res(void *key, int count, void **value, void *user) {
     cdlv_resource* res = (cdlv_resource*)*value;

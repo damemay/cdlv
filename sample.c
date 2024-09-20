@@ -4,11 +4,6 @@
 #include <SDL_ttf.h>
 #include <SDL_image.h>
 
-#include <libavcodec/avcodec.h>
-#include <libavutil/imgutils.h>
-#include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-
 #define _width 960
 #define _height 544
 #define title "cdlv2 sample"
@@ -114,12 +109,9 @@ static inline void* video_load_cb(const uint64_t width, const uint64_t height, v
     return texture;
 }
 
-static inline void video_update_cb(cdlv_video* video, bool minus, void* user_data) {
-    if(minus) {
-	SDL_UpdateYUVTexture(video->texture, NULL, video->frame->data[0] + video->frame->linesize[0] * (video->frame->height- 1), -video->frame->linesize[0], video->frame->data[1] + video->frame->linesize[1] * (AV_CEIL_RSHIFT(video->frame->height, 1) - 1), -video->frame->linesize[1], video->frame->data[2] + video->frame->linesize[2] * (AV_CEIL_RSHIFT(video->frame->height, 1) - 1), -video->frame->linesize[2]);
-    } else {
-	SDL_UpdateYUVTexture(video->texture, NULL, video->frame->data[0], video->frame->linesize[0], video->frame->data[1], video->frame->linesize[1], video->frame->data[2], video->frame->linesize[2]);
-    }
+static inline void video_update_cb(cdlv_yuv_plane plane, cdlv_yuv_pitch pitch, void* texture, void* user_data) {
+    SDL_Texture* _texture = (SDL_Texture*)texture;
+    SDL_UpdateYUVTexture(_texture, NULL, plane.y, pitch.y, plane.u, pitch.u, plane.v, pitch.v);
 }
 
 static inline int user_update_cb(void* user_data) {
@@ -186,10 +178,6 @@ int main(int argc, char* argv[]) {
 
     // Set script file and load it
     cdlv_set_script(&base, script_path);
-
-    // Set current scene to 0 and parse it's first line
-    cdlv_set_scene(&base, 0);
-    cdlv_parse_line(&base);
 
     bool running = true;
     while(running) {

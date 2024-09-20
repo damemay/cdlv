@@ -27,38 +27,6 @@ static inline int load_global_resources(void *key, int count, void **value, void
     return 1;
 }
 
-cdlv_error cdlv_set_script(cdlv* base, const char* path) {
-    cdlv_error res;
-    char* script = NULL;
-
-    base->resources = dic_new(0);
-    base->scenes = dic_new(0);
-
-    if((res = extract_path(base, path)) != cdlv_ok) cdlv_err(res);
-    if((res = cdlv_read_file_to_str(base, path, &script)) != cdlv_ok) cdlv_err(res);
-    if((res = cdlv_parse_script(base, script)) != cdlv_ok) cdlv_err(res);
-    free(script);
-
-    dic_forEach(base->resources, load_global_resources, base);
-
-    cdlv_err(cdlv_ok);
-}
-
-static inline int unload_global_resources(void *key, int count, void **value, void *user) {
-    cdlv_resource* resource = (cdlv_resource*)*value;
-    cdlv* base = (cdlv*)user;
-    cdlv_resource_unload(base, resource);
-    return 1;
-}
-
-cdlv_error cdlv_unset_script(cdlv* base) {
-    dic_forEach(base->resources, unload_global_resources, base);
-    free(base->resources_path);
-    cdlv_resources_free(base, base->resources);
-    cdlv_scenes_free(base, base->scenes);
-    cdlv_err(cdlv_ok);
-}
-
 typedef struct {
     uint16_t index;
     cdlv_scene* scene;
@@ -74,7 +42,7 @@ static inline int find_scene_index(void* key, int count, void** value, void* use
     return 1;
 }
 
-cdlv_error cdlv_set_scene(cdlv* base, const uint16_t index) {
+static inline cdlv_error cdlv_set_scene(cdlv* base, const uint16_t index) {
     cdlv_scene_searcher search = {
         .index = index,
         .scene = NULL,
@@ -141,7 +109,7 @@ static inline cdlv_error cdlv_parse_prompt(cdlv* base, const char* line, cdlv_sc
     cdlv_err(cdlv_ok);
 }
 
-cdlv_error cdlv_parse_line(cdlv* base) {
+static inline cdlv_error cdlv_parse_line(cdlv* base) {
     cdlv_scene* scene = (cdlv_scene*)base->current_scene;
     if(scene->script->size == 0) {
         cdlv_log("Scene's script is empty");
@@ -174,6 +142,40 @@ cdlv_error cdlv_parse_line(cdlv* base) {
 		base->user_config.line_callback(line, base->user_config.user_data);
 	}
     }
+    cdlv_err(cdlv_ok);
+}
+
+cdlv_error cdlv_set_script(cdlv* base, const char* path) {
+    cdlv_error res;
+    char* script = NULL;
+
+    base->resources = dic_new(0);
+    base->scenes = dic_new(0);
+
+    if((res = extract_path(base, path)) != cdlv_ok) cdlv_err(res);
+    if((res = cdlv_read_file_to_str(base, path, &script)) != cdlv_ok) cdlv_err(res);
+    if((res = cdlv_parse_script(base, script)) != cdlv_ok) cdlv_err(res);
+    free(script);
+
+    dic_forEach(base->resources, load_global_resources, base);
+    cdlv_set_scene(base, 0);
+    cdlv_parse_line(base);
+
+    cdlv_err(cdlv_ok);
+}
+
+static inline int unload_global_resources(void *key, int count, void **value, void *user) {
+    cdlv_resource* resource = (cdlv_resource*)*value;
+    cdlv* base = (cdlv*)user;
+    cdlv_resource_unload(base, resource);
+    return 1;
+}
+
+cdlv_error cdlv_unset_script(cdlv* base) {
+    dic_forEach(base->resources, unload_global_resources, base);
+    free(base->resources_path);
+    cdlv_resources_free(base, base->resources);
+    cdlv_scenes_free(base, base->scenes);
     cdlv_err(cdlv_ok);
 }
 
