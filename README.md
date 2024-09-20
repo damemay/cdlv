@@ -21,7 +21,7 @@ Easy to implement basically anywhere.
 
 ## Documentation
 
-Documentation can be found in [this repository's wiki](https://github.com/damemay/cdlv/wiki/Documentation)
+Documentation can be found in [this repository's wiki](https://github.com/damemay/cdlv/wiki)
 
 ## Scripting example
 ```
