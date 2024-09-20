@@ -158,8 +158,8 @@ cdlv_error cdlv_set_script(cdlv* base, const char* path) {
     free(script);
 
     dic_forEach(base->resources, load_global_resources, base);
-    cdlv_set_scene(base, 0);
-    cdlv_parse_line(base);
+    if((res = cdlv_set_scene(base, 0)) != cdlv_ok) cdlv_err(res);
+    if((res = cdlv_parse_line(base)) != cdlv_ok) cdlv_err(res);
 
     cdlv_err(cdlv_ok);
 }
