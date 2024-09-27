@@ -1,18 +1,21 @@
 #ifndef CDLV_H
 #define CDLV_H
 
-#include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
+#ifdef CDLV_FFMPEG
 #include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
 #include <libavformat/avformat.h>
+#endif
+#include "scl/scl.h"
 
 #define cdlv_max_string_size    UINT16_MAX
 #define cdlv_small_string       UINT8_MAX
 #define cdlv_max_choice_count   UINT8_MAX
 
-typedef struct dictionary cdlv_dict;
+typedef sdic cdlv_dict;
 
 typedef struct cdlv_color {
     uint8_t r; 

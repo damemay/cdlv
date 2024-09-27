@@ -20,6 +20,8 @@
     strcpy(*dest, src);                         \
 }
 
+typedef int (*cdlv_foreach)(char* key, void* value, void* user);
+void dic_forEach(cdlv_dict* dic, cdlv_foreach f, void *user);
 cdlv_error cdlv_extract_from_quotes(cdlv* base, const char* line, char** output);
 cdlv_error cdlv_extract_non_quote(cdlv* base, const char* line, char** output);
 cdlv_error cdlv_extract_filename(cdlv* base, const char* line, char** output);

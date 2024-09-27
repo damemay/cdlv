@@ -1,7 +1,6 @@
 #ifndef CDLV_SCENE_H
 #define CDLV_SCENE_H
 
-#include "array.h"
 #include "cdlv.h"
 
 typedef struct cdlv_scene {
@@ -9,7 +8,7 @@ typedef struct cdlv_scene {
     bool loaded;
     char* resources_path;
     cdlv_dict* resources;
-    scl_array* script;
+    sarr* script;
 } cdlv_scene;
 
 cdlv_error cdlv_scene_new(cdlv* base, const char* resource_path, cdlv_scene** scene);

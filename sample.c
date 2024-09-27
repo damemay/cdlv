@@ -7,6 +7,8 @@
 #define _width 960
 #define _height 544
 #define title "cdlv2 sample"
+#define cdlv_ascii_count 128
+#define cdlv_font_atlas_size 1024
 
 struct config {
     char text_font[cdlv_max_string_size];

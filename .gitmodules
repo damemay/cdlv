@@ -4,3 +4,6 @@
 [submodule "cJSON"]
 	path = cJSON
 	url = https://github.com/DaveGamble/cJSON.git
+[submodule "scl"]
+	path = scl
+	url = https://github.com/damemay/scl.git

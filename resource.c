@@ -1,7 +1,6 @@
 #include "resource.h"
 #include "util.h"
 #include "cdlv.h"
-#include "hashdict.c/hashdict.h"
 
 cdlv_error cdlv_resource_new(cdlv* base, const cdlv_resource_type type, char* path, cdlv_resource** resource) {
     cdlv_resource* new_resource = malloc(sizeof(cdlv_resource));
@@ -144,8 +143,8 @@ void cdlv_resource_free(cdlv* base, cdlv_resource* resource) {
     free(resource);
 }
 
-static inline int free_res(void *key, int count, void **value, void *user) {
-    cdlv_resource* res = (cdlv_resource*)*value;
+static inline int free_res(char *key, void *value, void *user) {
+    cdlv_resource* res = (cdlv_resource*)value;
     cdlv* base = (cdlv*)user;
     cdlv_resource_free(base, res);
     return 1;
@@ -153,7 +152,7 @@ static inline int free_res(void *key, int count, void **value, void *user) {
 
 void cdlv_resources_free(cdlv* base, cdlv_dict* resources) {
     dic_forEach(resources, free_res, base);
-    dic_delete(resources);
+    sdic_free(resources);
 }
 
 cdlv_error cdlv_play_video(cdlv* base, cdlv_video* video) {

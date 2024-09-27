@@ -2,7 +2,13 @@
 #include <string.h>
 #include "util.h"
 #include "resource.h"
-#include "hashdict.c/hashdict.h"
+
+void dic_forEach(cdlv_dict* dic, cdlv_foreach f, void *user) {
+    for(size_t i=0; i<dic->len; i++) {
+	struct sdic_i* it = (struct sdic_i*)dic->data[i];
+	f(it->key, it->value, user);
+    }
+}
 
 static inline char* find_first_whitespace(const char* line) {
     char* whitespace = strchr(line, ' ');
@@ -111,8 +117,7 @@ cdlv_error cdlv_add_new_resource(cdlv* base, const char* base_path, const char* 
         if((res = cdlv_resource_new(base, cdlv_resource_video, path, &resource)) != cdlv_ok) cdlv_err(res);
     }
     free(file_extension);
-    dic_add(resources, key, strlen(key));
-    *resources->value = resource;
+    sdic_add(resources, key, resource);
     cdlv_err(cdlv_ok);
 }
 
@@ -130,8 +135,7 @@ cdlv_error cdlv_add_new_resource_from_path(cdlv* base, const char* base_path, co
         if((res = cdlv_resource_new(base, cdlv_resource_video, endpath, &resource)) != cdlv_ok) cdlv_err(res);
     }
     free(file_extension);
-    dic_add(resources, (char*)name, strlen(name));
-    *resources->value = resource;
+    sdic_add(resources, name, resource);
     cdlv_err(cdlv_ok);
 }
 

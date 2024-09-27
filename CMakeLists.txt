@@ -26,10 +26,9 @@ if(CDLV_MONGOOSE AND CDLV_MDLV_SERVER)
         resource.c
         scene.c
         mdlv.c
-        hashdict.c/hashdict.c
+	scl/scl.c
         mongoose/mongoose.c
 	cJSON/cJSON.c
-        array.c
     )
 else()
     add_library(${PROJECT_NAME}
@@ -38,8 +37,7 @@ else()
         parse.c
         resource.c
         scene.c
-        hashdict.c/hashdict.c
-        array.c
+	scl/scl.c
     )
 endif()
 

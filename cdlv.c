@@ -3,7 +3,6 @@
 #include "util.h"
 #include "resource.h"
 #include "scene.h"
-#include "hashdict.c/hashdict.h"
 
 static inline cdlv_error extract_path(cdlv* base, const char* path) {
     char* sl = strrchr(path, '/');
@@ -20,8 +19,8 @@ static inline cdlv_error extract_path(cdlv* base, const char* path) {
     cdlv_err(cdlv_ok);
 }
 
-static inline int load_global_resources(void *key, int count, void **value, void *user) {
-    cdlv_resource* resource = (cdlv_resource*)*value;
+static inline int load_global_resources(char *key, void *value, void *user) {
+    cdlv_resource* resource = (cdlv_resource*)value;
     cdlv* base = (cdlv*)user;
     cdlv_resource_load(base, resource);
     return 1;
@@ -32,8 +31,8 @@ typedef struct {
     cdlv_scene* scene;
 } cdlv_scene_searcher;
 
-static inline int find_scene_index(void* key, int count, void** value, void* user) {
-    cdlv_scene* scene = (cdlv_scene*)*value;
+static inline int find_scene_index(char* key, void* value, void* user) {
+    cdlv_scene* scene = (cdlv_scene*)value;
     cdlv_scene_searcher* arg = (cdlv_scene_searcher*)user;
     if(scene->index == arg->index) {
         arg->scene = scene;
@@ -62,6 +61,7 @@ static inline cdlv_error cdlv_set_scene(cdlv* base, const uint16_t index) {
 
 static inline cdlv_error cdlv_parse_prompt(cdlv* base, const char* line, cdlv_scene* scene) {
     cdlv_error res;
+    void* find;
     if(strstr(line, cdlv_tag_prompt_bg)) {
         char* name;
         if((res = cdlv_extract_non_quote(base, line, &name)) != cdlv_ok) cdlv_err(res);
@@ -69,8 +69,8 @@ static inline cdlv_error cdlv_parse_prompt(cdlv* base, const char* line, cdlv_sc
             char* vname;
             if((res = cdlv_extract_filename(base, name, &vname)) != cdlv_ok) cdlv_err(res);
             if((res = cdlv_add_new_resource_from_path(base, scene->resources_path, vname, name, scene->resources)) != cdlv_ok) cdlv_err(res);
-            if(dic_find(scene->resources, vname, strlen(vname))) {
-                cdlv_resource* resource = *scene->resources->value;
+            if((find = sdic_get(scene->resources, vname))) {
+                cdlv_resource* resource = (cdlv_resource*)find;
                 cdlv_resource_load(base, resource);
                 if(resource->type == cdlv_resource_video) {
                     resource->video->is_playing = true;
@@ -81,8 +81,8 @@ static inline cdlv_error cdlv_parse_prompt(cdlv* base, const char* line, cdlv_sc
                 base->current_bg = resource;
             }
         } else {
-            if(dic_find(base->resources, name, strlen(name))) {
-                cdlv_resource* resource = *base->resources->value;
+            if((find = sdic_get(base->resources, name))) {
+                cdlv_resource* resource = (cdlv_resource*)find;
                 if(resource->type == cdlv_resource_video) {
                     resource->video->is_playing = true;
                     if(strstr(line, cdlv_tag_time_loop)) resource->video->loop = true;
@@ -90,8 +90,8 @@ static inline cdlv_error cdlv_parse_prompt(cdlv* base, const char* line, cdlv_sc
                     // base->accum = 1.1f;
                 }
                 base->current_bg = resource;
-            } else if(dic_find(scene->resources, name, strlen(name))) {
-                cdlv_resource* resource = *scene->resources->value;
+            } else if((find = sdic_get(scene->resources, name))) {
+                cdlv_resource* resource = (cdlv_resource*)find;
                 if(resource->type == cdlv_resource_video) {
                     resource->video->is_playing = true;
                     if(strstr(line, cdlv_tag_time_loop)) resource->video->loop = true;
@@ -111,12 +111,12 @@ static inline cdlv_error cdlv_parse_prompt(cdlv* base, const char* line, cdlv_sc
 
 static inline cdlv_error cdlv_parse_line(cdlv* base) {
     cdlv_scene* scene = (cdlv_scene*)base->current_scene;
-    if(scene->script->size == 0) {
+    if(scene->script->len == 0) {
         cdlv_log("Scene's script is empty");
         cdlv_err(cdlv_parse_error);
     }
     cdlv_error res;
-    if(base->current_line == scene->script->size) {
+    if(base->current_line == scene->script->len) {
 	cdlv_log("At the end of script");
         if(base->current_scene_index+1 < base->scene_count) {
 	    cdlv_log("Changing scene");
@@ -130,8 +130,8 @@ static inline cdlv_error cdlv_parse_line(cdlv* base) {
 	    cdlv_log("Setting end to true");
             base->end = true;
         }
-    } else if(base->current_line < scene->script->size) {
-        char* line = SCL_ARRAY_GET(scene->script, base->current_line, char*);
+    } else if(base->current_line < scene->script->len) {
+	char* line = (char*)sarr_get(scene->script, base->current_line);
         if(!line) cdlv_err(cdlv_fatal_error);
         if(line[0] == '@') {
             if((res = cdlv_parse_prompt(base, line, scene)) != cdlv_ok) cdlv_err(res);
@@ -149,8 +149,8 @@ cdlv_error cdlv_set_script(cdlv* base, const char* path) {
     cdlv_error res;
     char* script = NULL;
 
-    base->resources = dic_new(0);
-    base->scenes = dic_new(0);
+    base->resources = sdic_new();
+    base->scenes = sdic_new();
 
     if((res = extract_path(base, path)) != cdlv_ok) cdlv_err(res);
     if((res = cdlv_read_file_to_str(base, path, &script)) != cdlv_ok) cdlv_err(res);
@@ -164,8 +164,8 @@ cdlv_error cdlv_set_script(cdlv* base, const char* path) {
     cdlv_err(cdlv_ok);
 }
 
-static inline int unload_global_resources(void *key, int count, void **value, void *user) {
-    cdlv_resource* resource = (cdlv_resource*)*value;
+static inline int unload_global_resources(char *key, void *value, void *user) {
+    cdlv_resource* resource = (cdlv_resource*)value;
     cdlv* base = (cdlv*)user;
     cdlv_resource_unload(base, resource);
     return 1;

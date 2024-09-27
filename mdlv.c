@@ -1,17 +1,17 @@
 #include "mdlv.h"
 #include "mongoose/mongoose.h"
 #include "cJSON/cJSON.h"
-#include "hashdict.c/hashdict.h"
 #include "scene.h"
 #include "resource.h"
+#include "util.h"
 
-static int foreach_res(void *key, int count, void **value, void *user) {
-    cdlv_resource* res = (cdlv_resource*)*value;
+static int foreach_res(char *key, void *value, void *user) {
+    cdlv_resource* res = (cdlv_resource*)value;
     cJSON* resources = (cJSON*)user;
     cJSON* resource = cJSON_CreateObject();
     if(!resource) fprintf(stderr, "mdlv: cjson error\n");
     char key_buf[cdlv_max_string_size];
-    snprintf(key_buf, cdlv_max_string_size-1, "%.*s", count, (char*)key);
+    snprintf(key_buf, cdlv_max_string_size-1, "%s", key);
     if(!cJSON_AddStringToObject(resource, key_buf, res->path))
 	fprintf(stderr, "mdlv: cjson error\n");
     if(!cJSON_AddItemToArray(resources, resource))
@@ -19,14 +19,14 @@ static int foreach_res(void *key, int count, void **value, void *user) {
     return 1;
 }
 
-static int foreach_scene(void *key, int count, void **value, void *user) {
-    cdlv_scene* scene = (cdlv_scene*)*value;
+static int foreach_scene(char *key, void *value, void *user) {
+    cdlv_scene* scene = (cdlv_scene*)value;
     cJSON* scenes = (cJSON*)user;
     cJSON* scene_json = cJSON_CreateObject();
     if(!scene_json)
 	fprintf(stderr, "mdlv: cjson error\n");
     char key_buf[cdlv_max_string_size];
-    snprintf(key_buf, cdlv_max_string_size-1, "%.*s", count, (char*)key);
+    snprintf(key_buf, cdlv_max_string_size-1, "%s", key);
     if(!cJSON_AddStringToObject(scene_json, "name", key_buf))
 	fprintf(stderr, "mdlv: cjson error\n");
     cJSON* resources = cJSON_AddArrayToObject(scene_json, "resources");
@@ -36,8 +36,8 @@ static int foreach_scene(void *key, int count, void **value, void *user) {
     if(!cJSON_AddStringToObject(scene_json, "resources_path", scene->resources_path))
 	fprintf(stderr, "mdlv: cjson error\n");
     cJSON* script = cJSON_AddArrayToObject(scene_json, "script");
-    for(size_t i=0; i<scene->script->size; i++) {
-	char* line = SCL_ARRAY_GET(scene->script, i, char*);
+    for(size_t i=0; i<scene->script->len; i++) {
+	char* line = (char*)sarr_get(scene->script, i);
 	cJSON* line_json = cJSON_CreateString(line);
 	if(!line_json) fprintf(stderr, "mdlv: cjson error\n");
 	if(!cJSON_AddItemToArray(script, line_json))

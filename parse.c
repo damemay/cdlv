@@ -1,7 +1,6 @@
 #include "parse.h"
 #include "util.h"
 #include "scene.h"
-#include "hashdict.c/hashdict.h"
 
 static inline size_t strspn_whitespace(const char* line) {
     return strspn(line, " \t");
@@ -15,8 +14,7 @@ static inline cdlv_error add_new_scene(cdlv* base, const char* line, cdlv_scene*
     if((result = cdlv_scene_new(base, base->resources_path, &new_scene)) != cdlv_ok) cdlv_err(result);
     new_scene->index = base->scene_count;
     base->scene_count++;
-    dic_add(base->scenes, name, strlen(name));
-    *base->scenes->value = new_scene;
+    sdic_add(base->scenes, name, new_scene);
     *scene = new_scene;
     cdlv_err(cdlv_ok);
 }
@@ -108,7 +106,7 @@ static inline cdlv_error parse_definition(cdlv* base, cdlv_parse_mode* mode, con
 static inline cdlv_error add_script_line(cdlv* base, cdlv_scene* scene, const char* line) {
     char* dup_line;
     cdlv_strdup(&dup_line, line, strlen(line)+1);
-    SCL_ARRAY_ADD(scene->script, dup_line, char*);
+    sarr_add(scene->script, dup_line);
     cdlv_err(cdlv_ok);
 }
 
